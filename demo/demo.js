@@ -31,14 +31,13 @@ angular.module('app', [
         redirectTo: '/'
       });
   })
-  .controller('DemoCtrl', function ($scope, $interval) {
+  .controller('DemoCtrl', function ($scope, $interval, RandomTopNDataModel) {
     var widgetDefinitions = [
       {
         name: 'topN',
         directive: 'wt-top-n',
-        attrs: {
-          data: 'topN'
-        }
+        dataAttrName: 'data',
+        dataModelType: RandomTopNDataModel
       }
     ];
 
@@ -60,5 +59,30 @@ angular.module('app', [
         };
       });
     }, 500);
+  })
+  .factory('RandomTopNDataModel', function (WidgetDataModel, $interval) {
+    function RandomTopNDataModel() {
+    }
+
+    RandomTopNDataModel.prototype = Object.create(WidgetDataModel.prototype);
+
+    RandomTopNDataModel.prototype.init = function () {
+      this.intervalPromise = $interval(function () {
+        var topTen = _.map(_.range(0, 10), function (index) {
+          return {
+            name: 'item' + index,
+            value: Math.floor(Math.random() * 100)
+          };
+        });
+        this.updateScope(topTen);
+      }.bind(this), 500);
+    };
+
+    RandomTopNDataModel.prototype.destroy = function () {
+      WidgetDataModel.prototype.destroy.call(this);
+      $interval.cancel(this.intervalPromise);
+    };
+
+    return RandomTopNDataModel;
   });
 
