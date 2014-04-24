@@ -34,10 +34,28 @@ angular.module('app', [
   .controller('DemoCtrl', function ($scope, $interval, RandomTopNDataModel, RandomTimeSeriesDataModel) {
     var widgetDefinitions = [
       {
-        name: 'topN',
-        directive: 'wt-top-n',
-        dataAttrName: 'data',
-        dataModelType: RandomTopNDataModel
+        name: 'time',
+        directive: 'wt-time',
+        style: {
+          width: '33%'
+        }
+      },
+      {
+        name: 'random',
+        directive: 'wt-random',
+        style: {
+          width: '33%'
+        }
+      },
+      {
+        name: 'scope-watch',
+        directive: 'wt-scope-watch',
+        attrs: {
+          value: 'randomValue'
+        },
+        style: {
+          width: '34%'
+        }
       },
       {
         name: 'Line Chart',
@@ -47,12 +65,21 @@ angular.module('app', [
         style: {
           width: '50%'
         }
+      },
+      {
+        name: 'topN',
+        directive: 'wt-top-n',
+        dataAttrName: 'data',
+        dataModelType: RandomTopNDataModel
       }
     ];
 
     var defaultWidgets = [
-      { name: 'topN' },
-      { name: 'Line Chart' }
+      { name: 'time' },
+      { name: 'random' },
+      { name: 'scope-watch' },
+      { name: 'Line Chart' },
+      { name: 'topN' }
     ];
 
     $scope.dashboardOptions = {
@@ -61,6 +88,12 @@ angular.module('app', [
       defaultWidgets: defaultWidgets
     };
 
+    // random scope value (scope-watch widget)
+    $interval(function () {
+      $scope.randomValue = Math.random();
+    }, 500);
+
+    // line chart widget
     $interval(function () {
       $scope.topN = _.map(_.range(0, 10), function (index) {
         return {
