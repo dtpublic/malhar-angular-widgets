@@ -21,7 +21,7 @@ angular.module('ui.dashboard.widgets')
     return {
       restrict: 'A',
       replace: true,
-      templateUrl: 'scripts/widgets/pieChart/pieChart.html',
+      templateUrl: 'template/widgets/pieChart/pieChart.html',
       scope: {
         data: '=data'
       },

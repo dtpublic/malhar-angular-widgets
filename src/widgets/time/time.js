@@ -21,7 +21,7 @@ angular.module('ui.dashboard.widgets')
     return {
       restrict: 'A',
       replace: true,
-      templateUrl: 'scripts/widgets/time/time.html',
+      templateUrl: 'template/widgets/time/time.html',
       link: function (scope) {
         function update() {
           scope.time = new Date().toLocaleTimeString();

@@ -21,7 +21,7 @@ angular.module('ui.dashboard.widgets')
     return {
       restrict: 'A',
       replace: true,
-      templateUrl: 'scripts/widgets/random/random.html',
+      templateUrl: 'template/widgets/random/random.html',
       link: function postLink(scope) {
         function update() {
           scope.number = Math.floor(Math.random() * 100);

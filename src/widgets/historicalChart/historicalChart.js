@@ -21,7 +21,7 @@ angular.module('ui.dashboard.widgets')
     return {
       restrict: 'A',
       replace: true,
-      templateUrl: 'scripts/widgets/historicalChart/historicalChart.html',
+      templateUrl: 'template/widgets/historicalChart/historicalChart.html',
       scope: {
         chart: '='
       },

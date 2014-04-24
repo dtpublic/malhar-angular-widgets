@@ -23,8 +23,9 @@ module.exports = function (grunt) {
     concat: {
       dist: {
         src: [
+          'src/widgets/widgets.js',
           'src/widgets/{,*/}*.js',
-          'src/templates.js'
+          'template/templates.js'
         ],
         dest: 'dist/malhar-angular-widgets.js'
       }
@@ -66,6 +67,24 @@ module.exports = function (grunt) {
       templates: {
         src: ['<%= ngtemplates.dashboard.dest %>']
       }
+    },
+    connect: {
+      options: {
+        port: 9000,
+        // Change this to '0.0.0.0' to access the server from outside.
+        hostname: 'localhost',
+        livereload: 35729
+      },
+      demo: {
+        options: {
+          open: true,
+          base: [
+            'bower_components',
+            'dist',
+            'demo'
+          ]
+        }
+      }
     }
   });
 
@@ -73,6 +92,8 @@ module.exports = function (grunt) {
     'ngtemplates',
     'karma'
   ]);
+
+  grunt.registerTask('demo', ['connect:demo:keepalive']);
 
   grunt.registerTask('default', [
     'clean:dist',
