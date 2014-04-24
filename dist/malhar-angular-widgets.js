@@ -435,7 +435,7 @@ angular.module("ui.dashboard.widgets").run(["$templateCache", function($template
     "            showXAxis=\"true\"\n" +
     "            showYAxis=\"true\"\n" +
     "            reduceXTicks=\"true\"\n" +
-    "            tooltips=\"true\">\n" +
+    "            tooltips=\"false\">\n" +
     "    </nvd3-multi-bar-chart>\n" +
     "</div>"
   );
