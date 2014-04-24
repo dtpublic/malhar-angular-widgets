@@ -31,7 +31,7 @@ angular.module('app', [
         redirectTo: '/'
       });
   })
-  .controller('DemoCtrl', function ($scope, $interval, RandomTopNDataModel, RandomTimeSeriesDataModel) {
+  .controller('DemoCtrl', function ($scope, $interval, RandomTopNDataModel, RandomTimeSeriesDataModel, RandomMinutesDataModel) {
     var widgetDefinitions = [
       {
         name: 'time',
@@ -67,6 +67,15 @@ angular.module('app', [
         }
       },
       {
+        name: 'Bar Chart',
+        directive: 'wt-bar-chart',
+        dataAttrName: 'data',
+        dataModelType: RandomMinutesDataModel,
+        style: {
+          width: '50%'
+        }
+      },
+      {
         name: 'topN',
         directive: 'wt-top-n',
         dataAttrName: 'data',
@@ -79,6 +88,7 @@ angular.module('app', [
       { name: 'random' },
       { name: 'scope-watch' },
       { name: 'Line Chart' },
+      { name: 'Bar Chart' },
       { name: 'topN' }
     ];
 
@@ -175,6 +185,48 @@ angular.module('app', [
 
         this.updateScope(chart);
       }.bind(this), 1000);
+    };
+
+    RandomTimeSeriesDataModel.prototype.destroy = function () {
+      WidgetDataModel.prototype.destroy.call(this);
+      $interval.cancel(this.intervalPromise);
+    };
+
+    return RandomTimeSeriesDataModel;
+  })
+  .factory('RandomMinutesDataModel', function (WidgetDataModel, $interval) {
+    function RandomTimeSeriesDataModel() {
+    }
+
+    RandomTimeSeriesDataModel.prototype = Object.create(WidgetDataModel.prototype);
+
+    RandomTimeSeriesDataModel.prototype.init = function () {
+      var minuteCount = 30;
+      var data = [];
+      var chartValue = 50;
+
+      var limit = 500;
+      function nextValue() {
+        chartValue += Math.random() * (limit * 0.4) - limit * 0.2;
+        chartValue = chartValue < 0 ? 0 : chartValue > limit ? limit : chartValue;
+        return chartValue;
+      }
+
+      var now = Date.now();
+      for (var i = minuteCount - 1; i >= 0; i--) {
+        data.push({
+          timestamp: now - i * 1000 * 60,
+          value: nextValue()
+        });
+      }
+
+      var widgetData = [
+        {
+          key: 'Data',
+          values: data
+        }
+      ];
+      this.updateScope(widgetData);
     };
 
     RandomTimeSeriesDataModel.prototype.destroy = function () {

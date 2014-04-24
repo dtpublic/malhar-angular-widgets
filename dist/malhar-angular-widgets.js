@@ -14,8 +14,83 @@
  * limitations under the License.
  */
 
-angular.module('ui.dashboard.widgets', ['ngGrid']);
+angular.module('ui.dashboard.widgets', ['ngGrid', 'nvd3ChartDirectives']);
 
+/*
+ * Copyright (c) 2014 DataTorrent, Inc. ALL Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+'use strict';
+
+angular.module('ui.dashboard.widgets')
+  .directive('wtBarChart', function ($filter) {
+    return {
+      restrict: 'A',
+      replace: true,
+      templateUrl: 'template/widgets/barChart/barChart.html',
+      scope: {
+        data: '=data'
+      },
+      controller: function ($scope) {
+        var filter = $filter('date');
+
+        $scope.xAxisTickFormatFunction = function () {
+          return function(d) {
+            //console.log(new Date(d));
+            //return d3.time.format('%H:%M')(new Date(d));
+            return filter(d, 'HH:mm');
+          };
+        };
+
+        $scope.xFunction = function(){
+          return function(d) {
+            return d.timestamp;
+          };
+        };
+        $scope.yFunction = function(){
+          return function(d) {
+            return d.value;
+          };
+        };
+      },
+      link: function postLink(scope) {
+        scope.$watch('data', function (data) {
+          if (data && data[0] && data[0].values && (data[0].values.length > 1)) {
+            //var timeseries = data[0].values;
+            var timeseries = _.sortBy(data[0].values, function (item) {
+              return item.timestamp;
+            });
+
+            var start = timeseries[0].timestamp;
+            var end = timeseries[timeseries.length - 1].timestamp;
+            scope.start = start;
+            scope.end = end;
+
+            /*
+            var filter = $filter('date');
+            var d = _.map(timeseries, function (item) {
+              return filter(item.timestamp, 'MM:dd:HH:mm');
+              //return filter(item.timestamp, 'HH:mm');
+            });
+            console.log(d);
+            */
+          }
+        });
+      }
+    };
+  });
 /*
  * Copyright (c) 2014 DataTorrent, Inc. ALL Rights Reserved.
  *
@@ -74,7 +149,7 @@ angular.module('ui.dashboard.widgets')
 angular.module('ui.dashboard.widgets')
   .directive('wtLineChart', function () {
     return {
-      template: '<div></div>',
+      template: '<div class="line-chart"></div>',
       scope: {
         chart: '='
       },
@@ -346,6 +421,24 @@ angular.module('ui.dashboard.widgets')
     };
   });
 angular.module("ui.dashboard.widgets").run(["$templateCache", function($templateCache) {
+
+  $templateCache.put("template/widgets/barChart/barChart.html",
+    "<div class=\"bar-chart\">\n" +
+    "    <div style=\"text-align: right;\">\n" +
+    "        <span ng-if=\"start && end\">{{start|date:'HH:mm:ss'}} - {{end|date:'HH:mm:ss'}}</span>&nbsp;\n" +
+    "    </div>\n" +
+    "    <nvd3-multi-bar-chart\n" +
+    "            data=\"data\"\n" +
+    "            xAxisTickFormat=\"xAxisTickFormatFunction()\"\n" +
+    "            x=\"xFunction()\"\n" +
+    "            y=\"yFunction()\"\n" +
+    "            showXAxis=\"true\"\n" +
+    "            showYAxis=\"true\"\n" +
+    "            reduceXTicks=\"true\"\n" +
+    "            tooltips=\"true\">\n" +
+    "    </nvd3-multi-bar-chart>\n" +
+    "</div>"
+  );
 
   $templateCache.put("template/widgets/historicalChart/historicalChart.html",
     "<div>\n" +

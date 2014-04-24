@@ -19,7 +19,7 @@
 angular.module('ui.dashboard.widgets')
   .directive('wtLineChart', function () {
     return {
-      template: '<div></div>',
+      template: '<div class="line-chart"></div>',
       scope: {
         chart: '='
       },
