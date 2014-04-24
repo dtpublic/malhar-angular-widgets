@@ -18,7 +18,8 @@
 
 angular.module('app', [
     'ngRoute',
-    'ui.dashboard.widgets'
+    'ui.dashboard.widgets',
+    'ui.dashboard'
   ])
   .config(function ($routeProvider) {
     $routeProvider
@@ -31,41 +32,18 @@ angular.module('app', [
       });
   })
   .controller('DemoCtrl', function ($scope, $interval) {
-    $scope.topN = [
-      { name: 'item1', value: 'value1'},
-      { name: 'item2', value: 'value2'}
-    ];
-
     var widgetDefinitions = [
       {
-        name: 'time',
-        directive: 'wt-time'
-      },
-      {
-        name: 'random',
-        directive: 'wt-scope-watch',
+        name: 'topN',
+        directive: 'wt-top-n',
         attrs: {
-          value: 'randomValue'
+          data: 'topN'
         }
       }
     ];
 
     var defaultWidgets = [
-      { name: 'time' },
-      { name: 'random' },
-      { name: 'time' },
-      {
-        name: 'random',
-        style: {
-          width: '50%'
-        }
-      },
-      {
-        name: 'time',
-        style: {
-          width: '50%'
-        }
-      }
+      { name: 'topN' }
     ];
 
     $scope.dashboardOptions = {
@@ -75,7 +53,12 @@ angular.module('app', [
     };
 
     $interval(function () {
-      $scope.randomValue = Math.random();
+      $scope.topN = _.map(_.range(0, 10), function (index) {
+        return {
+          name: 'item' + index,
+          value: Math.floor(Math.random() * 100)
+        };
+      });
     }, 500);
   });
 
