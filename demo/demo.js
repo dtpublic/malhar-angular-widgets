@@ -203,11 +203,10 @@ angular.module('app', [
     RandomTimeSeriesDataModel.prototype.init = function () {
       var minuteCount = 30;
       var data = [];
-      var chartValue = 50;
-
       var limit = 500;
+      var chartValue = limit/2;
       function nextValue() {
-        chartValue += Math.random() * (limit * 0.4) - limit * 0.2;
+        chartValue += Math.random() * (limit * 0.4) - (limit * 0.2);
         chartValue = chartValue < 0 ? 0 : chartValue > limit ? limit : chartValue;
         return chartValue;
       }
