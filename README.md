@@ -1,2 +1,2 @@
-malhar-angular-widgets
-======================
+angular-widgets
+=================
