@@ -35,7 +35,7 @@ module.exports = function (grunt) {
         'src/**/*.*',
         'template/*.html'
       ],
-      tasks: ['ngtemplates', 'concat', 'copy:dist']
+      tasks: ['ngtemplates', 'concat']
     },
     jshint: {
       options: {
