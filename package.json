@@ -1,6 +1,9 @@
 {
   "name": "angular-ui-widgets",
   "version": "0.0.0",
+  "author": "https://github.com/DataTorrent/malhar-angular-widgets/graphs/contributors",
+  "homepage": "https://github.com/DataTorrent/malhar-angular-widgets",
+  "license": "Apache License, v2.0",
   "dependencies": {
     "express": "~3.4.8",
     "mongodb": "^1.4.0",
