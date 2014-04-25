@@ -80,7 +80,17 @@ angular.module('app', [
         directive: 'wt-top-n',
         dataAttrName: 'data',
         dataModelType: RandomTopNDataModel
-      }
+      },
+      {
+        name: 'gauge',
+        directive: 'wt-gauge',
+        attrs: {
+          value: 'percentage'
+        },
+        style: {
+          width: '250px'
+        }
+      },
     ];
 
     var defaultWidgets = [
@@ -89,7 +99,8 @@ angular.module('app', [
       { name: 'scope-watch' },
       { name: 'Line Chart' },
       { name: 'Bar Chart' },
-      { name: 'topN' }
+      { name: 'topN' },
+      { name: 'gauge' }
     ];
 
     $scope.dashboardOptions = {
@@ -102,6 +113,12 @@ angular.module('app', [
     $interval(function () {
       $scope.randomValue = Math.random();
     }, 500);
+
+    // percentage (gauge widget, progressbar widget)
+    $scope.percentage = 5;
+    $interval(function () {
+      $scope.percentage = ($scope.percentage + 10) % 100;
+    }, 1000);
 
     // line chart widget
     $interval(function () {
