@@ -14,4 +14,4 @@
  * limitations under the License.
  */
 
-angular.module('ui.dashboard.widgets', ['ngGrid', 'nvd3ChartDirectives']);
+angular.module('ui.widgets', ['ngGrid', 'nvd3ChartDirectives']);

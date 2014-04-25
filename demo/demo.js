@@ -18,7 +18,7 @@
 
 angular.module('app', [
     'ngRoute',
-    'ui.dashboard.widgets',
+    'ui.widgets',
     'ui.dashboard'
   ])
   .config(function ($routeProvider) {

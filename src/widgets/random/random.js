@@ -16,7 +16,7 @@
 
 'use strict';
 
-angular.module('ui.dashboard.widgets')
+angular.module('ui.widgets')
   .directive('wtRandom', function ($interval) {
     return {
       restrict: 'A',

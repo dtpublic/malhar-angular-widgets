@@ -8,7 +8,7 @@ module.exports = function (grunt) {
     ngtemplates: {
       dashboard: {
         options: {
-          module: 'ui.dashboard.widgets'
+          module: 'ui.widgets'
         },
         src: 'template/widgets/{,*/}*.html',
         dest: 'template/templates.js'

@@ -17,7 +17,7 @@
 describe('main test', function () {
   var $compile, $rootScope;
 
-  beforeEach(module('ui.dashboard.widgets'));
+  beforeEach(module('ui.widgets'));
   beforeEach(inject(function(_$compile_, _$rootScope_) {
     $compile = _$compile_;
     $rootScope = _$rootScope_;

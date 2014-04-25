@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-angular.module('ui.dashboard.widgets', ['ngGrid', 'nvd3ChartDirectives']);
+angular.module('ui.widgets', ['ngGrid', 'nvd3ChartDirectives']);
 
 /*
  * Copyright (c) 2014 DataTorrent, Inc. ALL Rights Reserved.
@@ -34,7 +34,7 @@ angular.module('ui.dashboard.widgets', ['ngGrid', 'nvd3ChartDirectives']);
 
 'use strict';
 
-angular.module('ui.dashboard.widgets')
+angular.module('ui.widgets')
   .directive('wtBarChart', function ($filter) {
     return {
       restrict: 'A',
@@ -48,8 +48,6 @@ angular.module('ui.dashboard.widgets')
 
         $scope.xAxisTickFormatFunction = function () {
           return function(d) {
-            //console.log(new Date(d));
-            //return d3.time.format('%H:%M')(new Date(d));
             return filter(d, 'HH:mm');
           };
         };
@@ -68,7 +66,6 @@ angular.module('ui.dashboard.widgets')
       link: function postLink(scope) {
         scope.$watch('data', function (data) {
           if (data && data[0] && data[0].values && (data[0].values.length > 1)) {
-            //var timeseries = data[0].values;
             var timeseries = _.sortBy(data[0].values, function (item) {
               return item.timestamp;
             });
@@ -77,15 +74,6 @@ angular.module('ui.dashboard.widgets')
             var end = timeseries[timeseries.length - 1].timestamp;
             scope.start = start;
             scope.end = end;
-
-            /*
-            var filter = $filter('date');
-            var d = _.map(timeseries, function (item) {
-              return filter(item.timestamp, 'MM:dd:HH:mm');
-              //return filter(item.timestamp, 'HH:mm');
-            });
-            console.log(d);
-            */
           }
         });
       }
@@ -109,7 +97,7 @@ angular.module('ui.dashboard.widgets')
 
 'use strict';
 
-angular.module('ui.dashboard.widgets')
+angular.module('ui.widgets')
   .directive('wtHistoricalChart', function () {
     return {
       restrict: 'A',
@@ -146,7 +134,7 @@ angular.module('ui.dashboard.widgets')
 
 'use strict';
 
-angular.module('ui.dashboard.widgets')
+angular.module('ui.widgets')
   .directive('wtLineChart', function () {
     return {
       template: '<div class="line-chart"></div>',
@@ -238,7 +226,7 @@ angular.module('ui.dashboard.widgets')
 
 'use strict';
 
-angular.module('ui.dashboard.widgets')
+angular.module('ui.widgets')
   .directive('wtPieChart', function () {
     return {
       restrict: 'A',
@@ -285,7 +273,7 @@ angular.module('ui.dashboard.widgets')
 
 'use strict';
 
-angular.module('ui.dashboard.widgets')
+angular.module('ui.widgets')
   .directive('wtRandom', function ($interval) {
     return {
       restrict: 'A',
@@ -322,7 +310,7 @@ angular.module('ui.dashboard.widgets')
 
 'use strict';
 
-angular.module('ui.dashboard.widgets')
+angular.module('ui.widgets')
   .directive('wtScopeWatch', function () {
     return {
       restrict: 'A',
@@ -352,7 +340,7 @@ angular.module('ui.dashboard.widgets')
 
 'use strict';
 
-angular.module('ui.dashboard.widgets')
+angular.module('ui.widgets')
   .directive('wtTime', function ($interval) {
     return {
       restrict: 'A',
@@ -389,7 +377,7 @@ angular.module('ui.dashboard.widgets')
 
 'use strict';
 
-angular.module('ui.dashboard.widgets')
+angular.module('ui.widgets')
   .directive('wtTopN', function () {
     return {
       restrict: 'A',
@@ -420,7 +408,7 @@ angular.module('ui.dashboard.widgets')
       }
     };
   });
-angular.module("ui.dashboard.widgets").run(["$templateCache", function($templateCache) {
+angular.module("ui.widgets").run(["$templateCache", function($templateCache) {
 
   $templateCache.put("template/widgets/barChart/barChart.html",
     "<div class=\"bar-chart\">\n" +

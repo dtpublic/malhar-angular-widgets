@@ -16,7 +16,7 @@
 
 'use strict';
 
-angular.module('ui.dashboard.widgets')
+angular.module('ui.widgets')
   .directive('wtLineChart', function () {
     return {
       template: '<div class="line-chart"></div>',
