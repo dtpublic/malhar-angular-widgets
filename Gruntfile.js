@@ -32,10 +32,21 @@ module.exports = function (grunt) {
     },
     watch: {
       files: [
-        'src/**/*.*',
-        'template/*.html'
+        'src/widgets/{,*/}*.*',
+        'template/widgets/{,*/}*.html'
       ],
-      tasks: ['ngtemplates', 'concat']
+      tasks: ['ngtemplates', 'concat'],
+      livereload: {
+        options: {
+          livereload: '<%= connect.options.livereload %>'
+        },
+        files: [
+          'demo/*.html',
+          'demo/*.css',
+          'demo/*.js',
+          'dist/*.js'
+        ]
+      }
     },
     jshint: {
       options: {
@@ -76,12 +87,11 @@ module.exports = function (grunt) {
         hostname: 'localhost',
         livereload: 35729
       },
-      demo: {
+      livereload: {
         options: {
           open: true,
           base: [
-            'bower_components',
-            'dist',
+            '.',
             'demo'
           ]
         }
@@ -94,7 +104,10 @@ module.exports = function (grunt) {
     'karma'
   ]);
 
-  grunt.registerTask('demo', ['connect:demo:keepalive']);
+  grunt.registerTask('demo', [
+    'connect:livereload',
+    'watch'
+  ]);
 
   grunt.registerTask('default', [
     'clean:dist',
