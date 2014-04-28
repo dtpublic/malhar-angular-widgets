@@ -32,7 +32,7 @@ module.exports = function (grunt) {
     },
     watch: {
       files: [
-        'src/widgets/{,*/}*.*',
+        'src/widgets/{,*/}*.js',
         'template/widgets/{,*/}*.html'
       ],
       tasks: ['ngtemplates', 'concat'],
@@ -41,9 +41,9 @@ module.exports = function (grunt) {
           livereload: '<%= connect.options.livereload %>'
         },
         files: [
-          'demo/*.html',
-          'demo/*.css',
-          'demo/*.js',
+          'demo/{,*/}*.html',
+          'demo/{,*/}*.css',
+          'demo/{,*/}*.js',
           'dist/*.js'
         ]
       }

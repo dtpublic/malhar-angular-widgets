@@ -24,7 +24,7 @@ angular.module('app', [
   .config(function ($routeProvider) {
     $routeProvider
       .when('/', {
-        templateUrl: 'view.html',
+        templateUrl: 'views/view.html',
         controller: 'DemoCtrl'
       })
       .otherwise({
