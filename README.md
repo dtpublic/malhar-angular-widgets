@@ -5,6 +5,8 @@ angular-widgets
 
  Widget Library (Line Chart, Bar Chart, Top N and more).
 
+![AngularJS Dashboard](docs/AngularJSDashboard.png "AngularJS Dashboard")
+
 ## Running Demo Application
  Install dependencies:
 
