@@ -15,7 +15,7 @@ module.exports = function(config) {
       'bower_components/underscore/underscore.js',
       'bower_components/angular/angular.js',
       'bower_components/angular-mocks/angular-mocks.js',
-      'bower_components/ng-grid/ng-grid-2.0.10.min.js',
+      'bower_components/ng-grid/ng-grid-2.0.11.min.js',
       'bower_components/angularjs-nvd3-directives/dist/angularjs-nvd3-directives.min.js',
       'src/widgets/widgets.js',
       'src/widgets/{,*/}*.js',
