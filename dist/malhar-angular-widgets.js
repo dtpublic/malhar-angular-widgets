@@ -35,125 +35,133 @@ angular.module('ui.models', []);
 
 'use strict';
 
-angular.module('ui.widgets')
-  .directive('wtBarChart', function ($filter) {
-    return {
-      restrict: 'A',
-      replace: true,
-      templateUrl: 'template/widgets/barChart/barChart.html',
-      scope: {
-        data: '=data'
-      },
-      controller: function ($scope) {
-        var filter = $filter('date');
+angular.module('ui.models').factory('RandomTopNDataModel', function (WidgetDataModel, $interval) {
+  function RandomTopNDataModel() {
+  }
 
-        $scope.xAxisTickFormatFunction = function () {
-          return function(d) {
-            return filter(d, 'HH:mm');
-          };
-        };
+  RandomTopNDataModel.prototype = Object.create(WidgetDataModel.prototype);
 
-        $scope.xFunction = function(){
-          return function(d) {
-            return d.timestamp;
-          };
+  RandomTopNDataModel.prototype.init = function () {
+    this.intervalPromise = $interval(function () {
+      var topTen = _.map(_.range(0, 10), function (index) {
+        return {
+          name: 'item' + index,
+          value: Math.floor(Math.random() * 100)
         };
-        $scope.yFunction = function(){
-          return function(d) {
-            return d.value;
-          };
-        };
-      },
-      link: function postLink(scope) {
-        scope.$watch('data', function (data) {
-          if (data && data[0] && data[0].values && (data[0].values.length > 1)) {
-            var timeseries = _.sortBy(data[0].values, function (item) {
-              return item.timestamp;
-            });
+      });
+      this.updateScope(topTen);
+    }.bind(this), 500);
+  };
 
-            var start = timeseries[0].timestamp;
-            var end = timeseries[timeseries.length - 1].timestamp;
-            scope.start = start;
-            scope.end = end;
-          }
+  RandomTopNDataModel.prototype.destroy = function () {
+    WidgetDataModel.prototype.destroy.call(this);
+    $interval.cancel(this.intervalPromise);
+  };
+
+  return RandomTopNDataModel;
+})
+  .factory('RandomTimeSeriesDataModel', function (WidgetDataModel, $interval) {
+    function RandomTimeSeriesDataModel() {
+    }
+
+    RandomTimeSeriesDataModel.prototype = Object.create(WidgetDataModel.prototype);
+
+    RandomTimeSeriesDataModel.prototype.init = function () {
+      var max = 30;
+      var data = [];
+      var chartValue = 50;
+
+      function nextValue() {
+        chartValue += Math.random() * 40 - 20;
+        chartValue = chartValue < 0 ? 0 : chartValue > 100 ? 100 : chartValue;
+        return chartValue;
+      }
+
+      var now = Date.now();
+      for (var i = max - 1; i >= 0; i--) {
+        data.push({
+          timestamp: now - i * 1000,
+          value: nextValue()
         });
       }
-    };
-  });
-/*
- * Copyright (c) 2014 DataTorrent, Inc. ALL Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-'use strict';
-
-angular.module('ui.widgets')
-  .directive('wtGauge', function () {
-    return {
-      replace: true,
-      scope: {
-        label: '@',
-        min: '=',
-        max: '=',
-        value: '='
-      },
-      link: function (scope, element, attrs) {
-        var config = {
-          size: 200,
-          label: attrs.label,
-          min: undefined !== scope.min ? scope.min : 0,
-          max: undefined !== scope.max ? scope.max : 100,
-          minorTicks: 5
-        };
-
-        var range = config.max - config.min;
-        config.yellowZones = [
-          { from: config.min + range * 0.75, to: config.min + range * 0.9 }
-        ];
-        config.redZones = [
-          { from: config.min + range * 0.9, to: config.max }
-        ];
-
-        scope.gauge = new Gauge(element[0], config);
-        scope.gauge.render();
-
-        function update(value) {
-          var percentage;
-          if (_.isString(value)) {
-            percentage = parseFloat(value);
-          } else if (_.isNumber(value)) {
-            percentage = value;
-          }
-
-          if (!_.isUndefined(percentage)) {
-            scope.gauge.redraw(percentage);
-          }
+      var chart = {
+        data: data,
+        max: max,
+        chartOptions: {
+          vAxis: {}
         }
+      };
+      this.updateScope(chart);
 
-        update(0);
+      this.intervalPromise = $interval(function () {
+        data.shift();
+        data.push({
+          timestamp: Date.now(),
+          value: nextValue()
+        });
 
-        scope.$watch('value', function (value) {
-          if (scope.gauge) {
-            update(value);
-          }
+        var chart = {
+          data: data,
+          max: max
+        };
+
+        this.updateScope(chart);
+      }.bind(this), 1000);
+    };
+
+    RandomTimeSeriesDataModel.prototype.destroy = function () {
+      WidgetDataModel.prototype.destroy.call(this);
+      $interval.cancel(this.intervalPromise);
+    };
+
+    return RandomTimeSeriesDataModel;
+  })
+  .factory('RandomMinutesDataModel', function (WidgetDataModel, $interval) {
+    function RandomTimeSeriesDataModel() {
+    }
+
+    RandomTimeSeriesDataModel.prototype = Object.create(WidgetDataModel.prototype);
+
+    RandomTimeSeriesDataModel.prototype.init = function () {
+      var minuteCount = 30;
+      var data = [];
+      var limit = 500;
+      var chartValue = limit/2;
+      function nextValue() {
+        chartValue += Math.random() * (limit * 0.4) - (limit * 0.2);
+        chartValue = chartValue < 0 ? 0 : chartValue > limit ? limit : chartValue;
+        return chartValue;
+      }
+
+      var now = Date.now();
+      for (var i = minuteCount - 1; i >= 0; i--) {
+        data.push({
+          timestamp: now - i * 1000 * 60,
+          value: nextValue()
         });
       }
+
+      var widgetData = [
+        {
+          key: 'Data',
+          values: data
+        }
+      ];
+      this.updateScope(widgetData);
     };
+
+    RandomTimeSeriesDataModel.prototype.destroy = function () {
+      WidgetDataModel.prototype.destroy.call(this);
+      $interval.cancel(this.intervalPromise);
+    };
+
+    return RandomTimeSeriesDataModel;
   });
 /**
  * Copied from https://github.com/lithiumtech/angular_and_d3
  */
+
+/* jshint ignore:start */
 
 function Gauge(element, configuration)
 {
@@ -416,6 +424,142 @@ function Gauge(element, configuration)
   // initialization
   this.configure(configuration);
 }
+
+/* jshint ignore:end */
+/*
+ * Copyright (c) 2014 DataTorrent, Inc. ALL Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+'use strict';
+
+angular.module('ui.widgets')
+  .directive('wtBarChart', function ($filter) {
+    return {
+      restrict: 'A',
+      replace: true,
+      templateUrl: 'template/widgets/barChart/barChart.html',
+      scope: {
+        data: '=data'
+      },
+      controller: function ($scope) {
+        var filter = $filter('date');
+
+        $scope.xAxisTickFormatFunction = function () {
+          return function(d) {
+            return filter(d, 'HH:mm');
+          };
+        };
+
+        $scope.xFunction = function(){
+          return function(d) {
+            return d.timestamp;
+          };
+        };
+        $scope.yFunction = function(){
+          return function(d) {
+            return d.value;
+          };
+        };
+      },
+      link: function postLink(scope) {
+        scope.$watch('data', function (data) {
+          if (data && data[0] && data[0].values && (data[0].values.length > 1)) {
+            var timeseries = _.sortBy(data[0].values, function (item) {
+              return item.timestamp;
+            });
+
+            var start = timeseries[0].timestamp;
+            var end = timeseries[timeseries.length - 1].timestamp;
+            scope.start = start;
+            scope.end = end;
+          }
+        });
+      }
+    };
+  });
+/*
+ * Copyright (c) 2014 DataTorrent, Inc. ALL Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+'use strict';
+
+angular.module('ui.widgets')
+  .directive('wtGauge', function () {
+    return {
+      replace: true,
+      scope: {
+        label: '@',
+        min: '=',
+        max: '=',
+        value: '='
+      },
+      link: function (scope, element, attrs) {
+        var config = {
+          size: 200,
+          label: attrs.label,
+          min: undefined !== scope.min ? scope.min : 0,
+          max: undefined !== scope.max ? scope.max : 100,
+          minorTicks: 5
+        };
+
+        var range = config.max - config.min;
+        config.yellowZones = [
+          { from: config.min + range * 0.75, to: config.min + range * 0.9 }
+        ];
+        config.redZones = [
+          { from: config.min + range * 0.9, to: config.max }
+        ];
+
+        scope.gauge = new Gauge(element[0], config);
+        scope.gauge.render();
+
+        function update(value) {
+          var percentage;
+          if (_.isString(value)) {
+            percentage = parseFloat(value);
+          } else if (_.isNumber(value)) {
+            percentage = value;
+          }
+
+          if (!_.isUndefined(percentage)) {
+            scope.gauge.redraw(percentage);
+          }
+        }
+
+        update(0);
+
+        scope.$watch('value', function (value) {
+          if (scope.gauge) {
+            update(value);
+          }
+        });
+      }
+    };
+  });
 /*
  * Copyright (c) 2014 DataTorrent, Inc. ALL Rights Reserved.
  *
@@ -745,220 +889,3 @@ angular.module('ui.widgets')
       }
     };
   });
-/*
- * Copyright (c) 2014 DataTorrent, Inc. ALL Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-'use strict';
-
-angular.module('ui.models').factory('RandomTopNDataModel', function (WidgetDataModel, $interval) {
-  function RandomTopNDataModel() {
-  }
-
-  RandomTopNDataModel.prototype = Object.create(WidgetDataModel.prototype);
-
-  RandomTopNDataModel.prototype.init = function () {
-    this.intervalPromise = $interval(function () {
-      var topTen = _.map(_.range(0, 10), function (index) {
-        return {
-          name: 'item' + index,
-          value: Math.floor(Math.random() * 100)
-        };
-      });
-      this.updateScope(topTen);
-    }.bind(this), 500);
-  };
-
-  RandomTopNDataModel.prototype.destroy = function () {
-    WidgetDataModel.prototype.destroy.call(this);
-    $interval.cancel(this.intervalPromise);
-  };
-
-  return RandomTopNDataModel;
-})
-  .factory('RandomTimeSeriesDataModel', function (WidgetDataModel, $interval) {
-    function RandomTimeSeriesDataModel() {
-    }
-
-    RandomTimeSeriesDataModel.prototype = Object.create(WidgetDataModel.prototype);
-
-    RandomTimeSeriesDataModel.prototype.init = function () {
-      var max = 30;
-      var data = [];
-      var chartValue = 50;
-
-      function nextValue() {
-        chartValue += Math.random() * 40 - 20;
-        chartValue = chartValue < 0 ? 0 : chartValue > 100 ? 100 : chartValue;
-        return chartValue;
-      }
-
-      var now = Date.now();
-      for (var i = max - 1; i >= 0; i--) {
-        data.push({
-          timestamp: now - i * 1000,
-          value: nextValue()
-        });
-      }
-      var chart = {
-        data: data,
-        max: max,
-        chartOptions: {
-          vAxis: {}
-        }
-      };
-      this.updateScope(chart);
-
-      this.intervalPromise = $interval(function () {
-        data.shift();
-        data.push({
-          timestamp: Date.now(),
-          value: nextValue()
-        });
-
-        var chart = {
-          data: data,
-          max: max
-        };
-
-        this.updateScope(chart);
-      }.bind(this), 1000);
-    };
-
-    RandomTimeSeriesDataModel.prototype.destroy = function () {
-      WidgetDataModel.prototype.destroy.call(this);
-      $interval.cancel(this.intervalPromise);
-    };
-
-    return RandomTimeSeriesDataModel;
-  })
-  .factory('RandomMinutesDataModel', function (WidgetDataModel, $interval) {
-    function RandomTimeSeriesDataModel() {
-    }
-
-    RandomTimeSeriesDataModel.prototype = Object.create(WidgetDataModel.prototype);
-
-    RandomTimeSeriesDataModel.prototype.init = function () {
-      var minuteCount = 30;
-      var data = [];
-      var limit = 500;
-      var chartValue = limit/2;
-      function nextValue() {
-        chartValue += Math.random() * (limit * 0.4) - (limit * 0.2);
-        chartValue = chartValue < 0 ? 0 : chartValue > limit ? limit : chartValue;
-        return chartValue;
-      }
-
-      var now = Date.now();
-      for (var i = minuteCount - 1; i >= 0; i--) {
-        data.push({
-          timestamp: now - i * 1000 * 60,
-          value: nextValue()
-        });
-      }
-
-      var widgetData = [
-        {
-          key: 'Data',
-          values: data
-        }
-      ];
-      this.updateScope(widgetData);
-    };
-
-    RandomTimeSeriesDataModel.prototype.destroy = function () {
-      WidgetDataModel.prototype.destroy.call(this);
-      $interval.cancel(this.intervalPromise);
-    };
-
-    return RandomTimeSeriesDataModel;
-  });
-angular.module("ui.widgets").run(["$templateCache", function($templateCache) {
-
-  $templateCache.put("template/widgets/barChart/barChart.html",
-    "<div class=\"bar-chart\">\n" +
-    "    <div style=\"text-align: right;\">\n" +
-    "        <span ng-if=\"start && end\">{{start|date:'HH:mm:ss'}} - {{end|date:'HH:mm:ss'}}</span>&nbsp;\n" +
-    "    </div>\n" +
-    "    <nvd3-multi-bar-chart\n" +
-    "            data=\"data\"\n" +
-    "            xAxisTickFormat=\"xAxisTickFormatFunction()\"\n" +
-    "            x=\"xFunction()\"\n" +
-    "            y=\"yFunction()\"\n" +
-    "            showXAxis=\"true\"\n" +
-    "            showYAxis=\"true\"\n" +
-    "            reduceXTicks=\"true\"\n" +
-    "            tooltips=\"false\">\n" +
-    "    </nvd3-multi-bar-chart>\n" +
-    "</div>"
-  );
-
-  $templateCache.put("template/widgets/historicalChart/historicalChart.html",
-    "<div>\n" +
-    "    <div class=\"btn-toolbar\">\n" +
-    "        <div class=\"btn-group\" style=\"float: right;\">\n" +
-    "            <button type=\"button\" class=\"btn btn-default btn-sm\" ng-click=\"changeMode('MINUTES')\"\n" +
-    "                    ng-class=\"{active: mode === 'MINUTES'}\">Minutes</button>\n" +
-    "            <button type=\"button\" class=\"btn btn-default btn-sm\" ng-click=\"changeMode('HOURS')\"\n" +
-    "                    ng-class=\"{active: mode === 'HOURS'}\">Hours</button>\n" +
-    "        </div>\n" +
-    "    </div>\n" +
-    "    <div wt-line-chart chart=\"chart\"></div>\n" +
-    "</div>"
-  );
-
-  $templateCache.put("template/widgets/pieChart/pieChart.html",
-    "<div>\n" +
-    "<nvd3-pie-chart\n" +
-    "    data=\"data\"\n" +
-    "    showLegend=\"true\"\n" +
-    "    width=\"300\" height=\"300\"\n" +
-    "    showlabels=\"true\"\n" +
-    "    labelType=\"percent\"\n" +
-    "    interactive=\"true\"\n" +
-    "    x=\"xFunction()\"\n" +
-    "    y=\"yFunction()\">\n" +
-    "</nvd3-pie-chart>\n" +
-    "</div>"
-  );
-
-  $templateCache.put("template/widgets/random/random.html",
-    "<div>\n" +
-    "    Random Number\n" +
-    "    <div class=\"alert alert-info\">{{number}}</div>\n" +
-    "</div>"
-  );
-
-  $templateCache.put("template/widgets/scopeWatch/scopeWatch.html",
-    "<div>\n" +
-    "    Value\n" +
-    "    <div class=\"alert\" ng-class=\"valueClass || 'alert-warning'\">{{scopeValue || 'no data'}}</div>\n" +
-    "</div>"
-  );
-
-  $templateCache.put("template/widgets/time/time.html",
-    "<div>\n" +
-    "    Time\n" +
-    "    <div class=\"alert alert-success\">{{time}}</div>\n" +
-    "</div>"
-  );
-
-  $templateCache.put("template/widgets/topN/topN.html",
-    "<div class=\"top-n\">\n" +
-    "    <div ng-grid=\"gridOptions\" class=\"grid\"></div>\n" +
-    "</div>"
-  );
-
-}]);

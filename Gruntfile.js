@@ -24,17 +24,14 @@ module.exports = function (grunt) {
       dist: {
         src: [
           'src/modules.js',
-          'src/widgets/{,*/}*.js',
-          'src/models/{,*/}*.js',
-          'template/templates.js'
+          'src/**/*.js'
         ],
         dest: 'dist/malhar-angular-widgets.js'
       }
     },
     watch: {
       files: [
-        'src/widgets/{,*/}*.js',
-        'src/models/{,*/}*.js',
+        'src/**/*.js',
         'template/widgets/{,*/}*.html'
       ],
       tasks: ['ngtemplates', 'concat'],
@@ -52,12 +49,15 @@ module.exports = function (grunt) {
     },
     jshint: {
       options: {
-        jshintrc: '.jshintrc'
+        jshintrc: '.jshintrc',
+        ignores: [
+          'src/vendor/{,*/}*.js'
+        ]
       },
       all: [
         'Gruntfile.js',
         'demo/*.js',
-        'src/{,*/}*.js'
+        'src/**/*.js'
       ]
     },
     copy: {

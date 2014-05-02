@@ -2,6 +2,8 @@
  * Copied from https://github.com/lithiumtech/angular_and_d3
  */
 
+/* jshint ignore:start */
+
 function Gauge(element, configuration)
 {
   this.element = element;
@@ -263,3 +265,5 @@ function Gauge(element, configuration)
   // initialization
   this.configure(configuration);
 }
+
+/* jshint ignore:end */
