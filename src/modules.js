@@ -15,3 +15,4 @@
  */
 
 angular.module('ui.widgets', ['ngGrid', 'nvd3ChartDirectives']);
+angular.module('ui.models', []);

@@ -23,8 +23,9 @@ module.exports = function (grunt) {
     concat: {
       dist: {
         src: [
-          'src/widgets/widgets.js',
+          'src/modules.js',
           'src/widgets/{,*/}*.js',
+          'src/models/{,*/}*.js',
           'template/templates.js'
         ],
         dest: 'dist/malhar-angular-widgets.js'
@@ -33,6 +34,7 @@ module.exports = function (grunt) {
     watch: {
       files: [
         'src/widgets/{,*/}*.js',
+        'src/models/{,*/}*.js',
         'template/widgets/{,*/}*.html'
       ],
       tasks: ['ngtemplates', 'concat'],
