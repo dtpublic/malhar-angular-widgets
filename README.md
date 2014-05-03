@@ -28,7 +28,7 @@ angular-widgets
     $ grunt demo
  ```
 
- Application will be available at http://localhost:9000
+ Application will be available at http://localhost:9001
 
 ## Building Application
 
