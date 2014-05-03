@@ -15,4 +15,5 @@
  */
 
 angular.module('ui.widgets', ['ngGrid', 'nvd3ChartDirectives']);
-angular.module('ui.models', []);
+angular.module('ui.websocket', ['ui.notify']);
+angular.module('ui.models', ['ui.websocket']);

@@ -15,7 +15,8 @@
  */
 
 angular.module('ui.widgets', ['ngGrid', 'nvd3ChartDirectives']);
-angular.module('ui.models', []);
+angular.module('ui.websocket', ['ui.notify']);
+angular.module('ui.models', ['ui.websocket']);
 
 /*
  * Copyright (c) 2014 DataTorrent, Inc. ALL Rights Reserved.
@@ -157,6 +158,303 @@ angular.module('ui.models').factory('RandomTopNDataModel', function (WidgetDataM
 
     return RandomTimeSeriesDataModel;
   });
+/*
+ * Copyright (c) 2014 DataTorrent, Inc. ALL Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+'use strict';
+
+angular.module('ui.models')
+  .factory('WebSocketDataModel', function (WidgetDataModel, webSocket) {
+    function WebSocketDataModel() {
+    }
+
+    WebSocketDataModel.prototype = Object.create(WidgetDataModel.prototype);
+
+    WebSocketDataModel.prototype.init = function () {
+      this.topic = null;
+      this.callback = null;
+      if (this.dataModelOptions && this.dataModelOptions.defaultTopic) {
+        this.update(this.dataModelOptions.defaultTopic);
+      }
+    };
+
+    WebSocketDataModel.prototype.update = function (newTopic) {
+      var that = this;
+
+      if (this.topic && this.callback) {
+        webSocket.unsubscribe(this.topic, this.callback);
+      }
+
+      this.callback = function (message) {
+        that.updateScope(message);
+        that.widgetScope.$apply();
+      };
+
+      this.topic = newTopic;
+      webSocket.subscribe(this.topic, this.callback, this.widgetScope);
+    };
+
+    WebSocketDataModel.prototype.destroy = function () {
+      WidgetDataModel.prototype.destroy.call(this);
+
+      if (this.topic && this.callback) {
+        webSocket.unsubscribe(this.topic, this.callback);
+      }
+    };
+
+    return WebSocketDataModel;
+  })
+  .factory('TimeSeriesDataModel', function (WebSocketDataModel) {
+    function TimeSeriesDataModel() {
+    }
+
+    TimeSeriesDataModel.prototype = Object.create(WebSocketDataModel.prototype);
+
+    TimeSeriesDataModel.prototype.init = function () {
+      WebSocketDataModel.prototype.init.call(this);
+    };
+
+    TimeSeriesDataModel.prototype.update = function (newTopic) {
+      WebSocketDataModel.prototype.update.call(this, newTopic);
+      this.items = [];
+    };
+
+    TimeSeriesDataModel.prototype.updateScope = function (value) {
+      value = _.isArray(value) ? value[0] : value;
+
+      this.items.push({
+        timestamp: parseInt(value.timestamp, 10), //TODO
+        value: parseInt(value.value, 10) //TODO
+      });
+
+      if (this.items.length > 100) { //TODO
+        this.items.shift();
+      }
+
+      var chart = {
+        data: this.items,
+        max: 30
+      };
+
+      WebSocketDataModel.prototype.updateScope.call(this, chart);
+      this.data = [];
+    };
+
+    return TimeSeriesDataModel;
+  })
+  .factory('PieChartDataModel', function (WebSocketDataModel) {
+    function PieChartDataModel() {
+    }
+
+    PieChartDataModel.prototype = Object.create(WebSocketDataModel.prototype);
+
+    PieChartDataModel.prototype.init = function () {
+      WebSocketDataModel.prototype.init.call(this);
+      this.data = [];
+    };
+
+    PieChartDataModel.prototype.update = function (newTopic) {
+      WebSocketDataModel.prototype.update.call(this, newTopic);
+    };
+
+    PieChartDataModel.prototype.updateScope = function (value) {
+      var sum = _.reduce(value, function (memo, item) {
+        return memo + parseFloat(item.value);
+      }, 0);
+
+      var sectors = _.map(value, function (item) {
+        return {
+          key: item.label,
+          y: item.value / sum
+        };
+      });
+
+      sectors = _.sortBy(sectors, function (item) {
+        return item.key;
+      });
+
+      WebSocketDataModel.prototype.updateScope.call(this, sectors);
+    };
+
+    return PieChartDataModel;
+  });
+
+'use strict';
+
+angular.module('ui.websocket')
+  .factory('visibly', function ($window) {
+    return $window.visibly;
+  })
+  .provider('webSocket', function () {
+
+    var webSocketURL;
+    var webSocketObject; // for testing only
+
+    return {
+      $get: function ($q,  $rootScope, $timeout, notificationService, visibly) {
+        if (!webSocketURL && !webSocketObject) {
+          throw 'WebSocket URL is not defined';
+        }
+
+        var socket = !webSocketObject ? new WebSocket(webSocketURL) : webSocketObject;
+
+        var deferred = $q.defer();
+
+        socket.onopen = function () {
+          deferred.resolve();
+          $rootScope.$apply();
+
+          notificationService.notify({
+            title: 'WebSocket',
+            text: 'WebSocket connection established.',
+            type: 'success',
+            delay: 2000,
+            icon: false,
+            history: false
+          });
+        };
+
+        var webSocketError = false;
+
+        socket.onclose = function () {
+          if (!webSocketError) {
+            notificationService.notify({
+              title: 'WebSocket Closed',
+              text: 'WebSocket connection has been closed. Try refreshing the page.',
+              type: 'error',
+              icon: false,
+              hide: false,
+              history: false
+            });
+          }
+        };
+
+        //TODO
+        socket.onerror = function () {
+          webSocketError = true;
+          notificationService.notify({
+            title: 'WebSocket Error',
+            text: 'WebSocket error. Try refreshing the page.',
+            type: 'error',
+            icon: false,
+            hide: false,
+            history: false
+          });
+        };
+
+        var topicMap = {}; // topic -> [callbacks] mapping
+
+        var stopUpdates = false;
+
+        socket.onmessage = function (event) {
+          if (stopUpdates) { // stop updates if page is inactive
+            return;
+          }
+
+          var message = JSON.parse(event.data);
+
+          var topic = message.topic;
+
+          if (topicMap.hasOwnProperty(topic)) {
+            topicMap[topic].fire(message.data);
+          }
+        };
+
+        var timeoutPromise;
+
+        visibly.onHidden(function () {
+          timeoutPromise = $timeout(function () {
+            stopUpdates = true;
+            timeoutPromise = null;
+          }, 60000);
+        });
+
+        visibly.onVisible(function () {
+          /*
+          if (stopUpdates && !webSocketError) {
+            notificationService.notify({
+              title: 'Warning',
+              text: 'Page has not been visible for more than 60 seconds. WebSocket real-time updates have been suspended to conserve system resources. ' +
+                'Refreshing the page is recommended.',
+              type: 'warning',
+              icon: false,
+              hide: false,
+              history: false
+            });
+          }
+          */
+
+          stopUpdates = false;
+
+          if (timeoutPromise) {
+            $timeout.cancel(timeoutPromise);
+          }
+
+          console.log('visible');
+        });
+
+        return {
+          send: function (message) {
+            var msg = JSON.stringify(message);
+
+            deferred.promise.then(function () {
+              console.log('send ' + msg);
+              socket.send(msg);
+            });
+          },
+
+          subscribe: function (topic, callback, $scope) {
+            var callbacks = topicMap[topic];
+
+            if (!callbacks) {
+              var message = { type: 'subscribe', topic: topic }; // subscribe message
+              this.send(message);
+
+              callbacks = jQuery.Callbacks();
+              topicMap[topic] = callbacks;
+            }
+
+            callbacks.add(callback);
+
+            if ($scope) {
+              $scope.$on('$destroy', function () {
+                this.unsubscribe(topic, callback);
+              }.bind(this));
+            }
+          },
+
+          unsubscribe: function (topic, callback) {
+            if (topicMap.hasOwnProperty(topic)) {
+              var callbacks = topicMap[topic];
+              callbacks.remove(callback); //TODO remove topic from topicMap if callbacks is empty
+            }
+          }
+        };
+      },
+
+      setWebSocketURL: function (wsURL) {
+        webSocketURL = wsURL;
+      },
+
+      setWebSocketObject: function (wsObject) {
+        webSocketObject = wsObject;
+      }
+    };
+  });
+
 /**
  * Copied from https://github.com/lithiumtech/angular_and_d3
  */
@@ -426,6 +724,135 @@ function Gauge(element, configuration)
 }
 
 /* jshint ignore:end */
+/*!
+ * visibly - v0.6 Aug 2011 - Page Visibility API Polyfill
+ * http://github.com/addyosmani
+ * Copyright (c) 2011 Addy Osmani
+ * Dual licensed under the MIT and GPL licenses.
+ *
+ * Methods supported:
+ * visibly.onVisible(callback)
+ * visibly.onHidden(callback)
+ * visibly.hidden()
+ * visibly.visibilityState()
+ * visibly.visibilitychange(callback(state));
+ */
+
+;(function () {
+
+    window.visibly = {
+        q: document,
+        p: undefined,
+        prefixes: ['webkit', 'ms','o','moz','khtml'],
+        props: ['VisibilityState', 'visibilitychange', 'Hidden'],
+        m: ['focus', 'blur'],
+        visibleCallbacks: [],
+        hiddenCallbacks: [],
+        genericCallbacks:[],
+        _callbacks: [],
+        cachedPrefix:"",
+        fn:null,
+
+        onVisible: function (_callback) {
+            if(typeof _callback == 'function' ){
+                this.visibleCallbacks.push(_callback);
+            }
+        },
+        onHidden: function (_callback) {
+            if(typeof _callback == 'function' ){
+                this.hiddenCallbacks.push(_callback);
+            }
+        },
+        getPrefix:function(){
+            if(!this.cachedPrefix){
+                for(var l=0;b=this.prefixes[l++];){
+                    if(b + this.props[2] in this.q){
+                        this.cachedPrefix =  b;
+                        return this.cachedPrefix;
+                    }
+                }    
+             }
+        },
+
+        visibilityState:function(){
+            return  this._getProp(0);
+        },
+        hidden:function(){
+            return this._getProp(2);
+        },
+        visibilitychange:function(fn){
+            if(typeof fn == 'function' ){
+                this.genericCallbacks.push(fn);
+            }
+
+            var n =  this.genericCallbacks.length;
+            if(n){
+                if(this.cachedPrefix){
+                     while(n--){
+                        this.genericCallbacks[n].call(this, this.visibilityState());
+                    }
+                }else{
+                    while(n--){
+                        this.genericCallbacks[n].call(this, arguments[0]);
+                    }
+                }
+            }
+
+        },
+        isSupported: function (index) {
+            return ((this.cachedPrefix + this.props[2]) in this.q);
+        },
+        _getProp:function(index){
+            return this.q[this.cachedPrefix + this.props[index]]; 
+        },
+        _execute: function (index) {
+            if (index) {
+                this._callbacks = (index == 1) ? this.visibleCallbacks : this.hiddenCallbacks;
+                var n =  this._callbacks.length;
+                while(n--){
+                    this._callbacks[n]();
+                }
+            }
+        },
+        _visible: function () {
+            window.visibly._execute(1);
+            window.visibly.visibilitychange.call(window.visibly, 'visible');
+        },
+        _hidden: function () {
+            window.visibly._execute(2);
+            window.visibly.visibilitychange.call(window.visibly, 'hidden');
+        },
+        _nativeSwitch: function () {
+            this[this._getProp(2) ? '_hidden' : '_visible']();
+        },
+        _listen: function () {
+            try { /*if no native page visibility support found..*/
+                if (!(this.isSupported())) {
+                    if (this.q.addEventListener) { /*for browsers without focusin/out support eg. firefox, opera use focus/blur*/
+                        window.addEventListener(this.m[0], this._visible, 1);
+                        window.addEventListener(this.m[1], this._hidden, 1);
+                    } else { /*IE <10s most reliable focus events are onfocusin/onfocusout*/
+                        if (this.q.attachEvent) {
+                            this.q.attachEvent('onfocusin', this._visible);
+                            this.q.attachEvent('onfocusout', this._hidden);
+                        }
+                    }
+                } else { /*switch support based on prefix detected earlier*/
+                    this.q.addEventListener(this.cachedPrefix + this.props[1], function () {
+                        window.visibly._nativeSwitch.apply(window.visibly, arguments);
+                    }, 1);
+                }
+            } catch (e) {}
+        },
+        init: function () {
+            this.getPrefix();
+            this._listen();
+        }
+    };
+
+    this.visibly.init();
+})();
+
 /*
  * Copyright (c) 2014 DataTorrent, Inc. ALL Rights Reserved.
  *
@@ -889,3 +1316,80 @@ angular.module('ui.widgets')
       }
     };
   });
+angular.module("ui.widgets").run(["$templateCache", function($templateCache) {
+
+  $templateCache.put("template/widgets/barChart/barChart.html",
+    "<div class=\"bar-chart\">\n" +
+    "    <div style=\"text-align: right;\">\n" +
+    "        <span ng-if=\"start && end\">{{start|date:'HH:mm:ss'}} - {{end|date:'HH:mm:ss'}}</span>&nbsp;\n" +
+    "    </div>\n" +
+    "    <nvd3-multi-bar-chart\n" +
+    "            data=\"data\"\n" +
+    "            xAxisTickFormat=\"xAxisTickFormatFunction()\"\n" +
+    "            x=\"xFunction()\"\n" +
+    "            y=\"yFunction()\"\n" +
+    "            showXAxis=\"true\"\n" +
+    "            showYAxis=\"true\"\n" +
+    "            reduceXTicks=\"true\"\n" +
+    "            tooltips=\"false\">\n" +
+    "    </nvd3-multi-bar-chart>\n" +
+    "</div>"
+  );
+
+  $templateCache.put("template/widgets/historicalChart/historicalChart.html",
+    "<div>\n" +
+    "    <div class=\"btn-toolbar\">\n" +
+    "        <div class=\"btn-group\" style=\"float: right;\">\n" +
+    "            <button type=\"button\" class=\"btn btn-default btn-sm\" ng-click=\"changeMode('MINUTES')\"\n" +
+    "                    ng-class=\"{active: mode === 'MINUTES'}\">Minutes</button>\n" +
+    "            <button type=\"button\" class=\"btn btn-default btn-sm\" ng-click=\"changeMode('HOURS')\"\n" +
+    "                    ng-class=\"{active: mode === 'HOURS'}\">Hours</button>\n" +
+    "        </div>\n" +
+    "    </div>\n" +
+    "    <div wt-line-chart chart=\"chart\"></div>\n" +
+    "</div>"
+  );
+
+  $templateCache.put("template/widgets/pieChart/pieChart.html",
+    "<div>\n" +
+    "<nvd3-pie-chart\n" +
+    "    data=\"data\"\n" +
+    "    showLegend=\"true\"\n" +
+    "    width=\"300\" height=\"300\"\n" +
+    "    showlabels=\"true\"\n" +
+    "    labelType=\"percent\"\n" +
+    "    interactive=\"true\"\n" +
+    "    x=\"xFunction()\"\n" +
+    "    y=\"yFunction()\">\n" +
+    "</nvd3-pie-chart>\n" +
+    "</div>"
+  );
+
+  $templateCache.put("template/widgets/random/random.html",
+    "<div>\n" +
+    "    Random Number\n" +
+    "    <div class=\"alert alert-info\">{{number}}</div>\n" +
+    "</div>"
+  );
+
+  $templateCache.put("template/widgets/scopeWatch/scopeWatch.html",
+    "<div>\n" +
+    "    Value\n" +
+    "    <div class=\"alert\" ng-class=\"valueClass || 'alert-warning'\">{{scopeValue || 'no data'}}</div>\n" +
+    "</div>"
+  );
+
+  $templateCache.put("template/widgets/time/time.html",
+    "<div>\n" +
+    "    Time\n" +
+    "    <div class=\"alert alert-success\">{{time}}</div>\n" +
+    "</div>"
+  );
+
+  $templateCache.put("template/widgets/topN/topN.html",
+    "<div class=\"top-n\">\n" +
+    "    <div ng-grid=\"gridOptions\" class=\"grid\"></div>\n" +
+    "</div>"
+  );
+
+}]);
