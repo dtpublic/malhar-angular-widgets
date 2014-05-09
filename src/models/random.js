@@ -104,10 +104,16 @@ angular.module('ui.models').factory('RandomTopNDataModel', function (WidgetDataM
     RandomTimeSeriesDataModel.prototype = Object.create(WidgetDataModel.prototype);
 
     RandomTimeSeriesDataModel.prototype.init = function () {
+      this.generateChart();
+      this.intervalPromise = $interval(this.generateChart.bind(this), 2000);
+    };
+
+    RandomTimeSeriesDataModel.prototype.generateChart = function () {
       var minuteCount = 30;
       var data = [];
       var limit = 500;
       var chartValue = limit/2;
+
       function nextValue() {
         chartValue += Math.random() * (limit * 0.4) - (limit * 0.2);
         chartValue = chartValue < 0 ? 0 : chartValue > limit ? limit : chartValue;
@@ -115,6 +121,7 @@ angular.module('ui.models').factory('RandomTopNDataModel', function (WidgetDataM
       }
 
       var now = Date.now();
+
       for (var i = minuteCount - 1; i >= 0; i--) {
         data.push({
           timestamp: now - i * 1000 * 60,
@@ -128,6 +135,7 @@ angular.module('ui.models').factory('RandomTopNDataModel', function (WidgetDataM
           values: data
         }
       ];
+
       this.updateScope(widgetData);
     };
 
