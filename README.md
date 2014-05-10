@@ -51,6 +51,8 @@ When **adding new javascript files**, please prepend the Apache v2.0 license hea
 
 [malhar-angular-dashboard](https://github.com/DataTorrent/malhar-angular-dashboard) AngularJS Dashboard directive.
 
+[malhar-dashboard-webapp](https://github.com/DataTorrent/malhar-dashboard-webapp) Demo using dashboard and widget library
+
 [Node.js](http://nodejs.org/) Software platform built on JavaScript runtime
 
 [AngularJS](http://angularjs.org/) JavaScript framework
