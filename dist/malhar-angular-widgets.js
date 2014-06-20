@@ -1438,8 +1438,8 @@ angular.module("ui.widgets").run(["$templateCache", function($templateCache) {
     "    <button type=\"button\" class=\"btn btn-default\" ng-click=\"prevValue();\">\n" +
     "        <span class=\"glyphicon glyphicon-chevron-left\"></span>\n" +
     "    </button>\n" +
-    "    <button type=\"button\" class=\"btn btn-default\">\n" +
-    "        <span class=\"glyphicon glyphicon-chevron-right\" ng-click=\"nextValue();\"></span>\n" +
+    "    <button type=\"button\" class=\"btn btn-default\" ng-click=\"nextValue();\">\n" +
+    "        <span class=\"glyphicon glyphicon-chevron-right\"></span>\n" +
     "    </button>\n" +
     "</div>"
   );
