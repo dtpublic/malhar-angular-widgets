@@ -11,7 +11,7 @@
     "angular-cookies": "~1.2.20",
     "angular-sanitize": "~1.2.20",
     "bootstrap": "~3.0.3",
-    "angular-bootstrap": "0.9.0",
+    "angular-bootstrap": "0.11.0",
     "angular-route": "~1.2.20",
     "underscore": "~1.5.2",
     "ng-grid": "2.0.11",
@@ -28,6 +28,8 @@
   },
   "resolutions": {
     "jquery": "~2.0.3",
-    "d3": "3.4.4"
+    "d3": "3.4.4",
+    "underscore": "~1.6.0",
+    "angular": "1.2.21"
   }
 }
