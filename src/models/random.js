@@ -16,31 +16,56 @@
 
 'use strict';
 
-angular.module('ui.models').factory('RandomTopNDataModel', function (WidgetDataModel, $interval) {
-  function RandomTopNDataModel() {
-  }
+angular.module('ui.models')
+  .factory('RandomPercentageDataModel', function (WidgetDataModel, $interval) {
+    function RandomPercentageDataModel() {
+    }
 
-  RandomTopNDataModel.prototype = Object.create(WidgetDataModel.prototype);
+    RandomPercentageDataModel.prototype = Object.create(WidgetDataModel.prototype);
 
-  RandomTopNDataModel.prototype.init = function () {
-    this.intervalPromise = $interval(function () {
-      var topTen = _.map(_.range(0, 10), function (index) {
-        return {
-          name: 'item' + index,
-          value: Math.floor(Math.random() * 100)
-        };
-      });
-      this.updateScope(topTen);
-    }.bind(this), 500);
-  };
+    RandomPercentageDataModel.prototype.init = function () {
+      var value = 50;
 
-  RandomTopNDataModel.prototype.destroy = function () {
-    WidgetDataModel.prototype.destroy.call(this);
-    $interval.cancel(this.intervalPromise);
-  };
+      this.intervalPromise = $interval(function () {
+        value += Math.random() * 40 - 20;
+        value = value < 0 ? 0 : value > 100 ? 100 : value;
 
-  return RandomTopNDataModel;
-})
+        this.updateScope(value);
+      }.bind(this), 500);
+    };
+
+    RandomPercentageDataModel.prototype.destroy = function () {
+      WidgetDataModel.prototype.destroy.call(this);
+      $interval.cancel(this.intervalPromise);
+    };
+
+    return RandomPercentageDataModel;
+  })
+  .factory('RandomTopNDataModel', function (WidgetDataModel, $interval) {
+    function RandomTopNDataModel() {
+    }
+
+    RandomTopNDataModel.prototype = Object.create(WidgetDataModel.prototype);
+
+    RandomTopNDataModel.prototype.init = function () {
+      this.intervalPromise = $interval(function () {
+        var topTen = _.map(_.range(0, 10), function (index) {
+          return {
+            name: 'item' + index,
+            value: Math.floor(Math.random() * 100)
+          };
+        });
+        this.updateScope(topTen);
+      }.bind(this), 500);
+    };
+
+    RandomTopNDataModel.prototype.destroy = function () {
+      WidgetDataModel.prototype.destroy.call(this);
+      $interval.cancel(this.intervalPromise);
+    };
+
+    return RandomTopNDataModel;
+  })
   .factory('RandomTimeSeriesDataModel', function (WidgetDataModel, $interval) {
     function RandomTimeSeriesDataModel() {
     }
@@ -112,7 +137,7 @@ angular.module('ui.models').factory('RandomTopNDataModel', function (WidgetDataM
       var minuteCount = 30;
       var data = [];
       var limit = 500;
-      var chartValue = limit/2;
+      var chartValue = limit / 2;
 
       function nextValue() {
         chartValue += Math.random() * (limit * 0.4) - (limit * 0.2);
