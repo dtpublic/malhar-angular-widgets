@@ -3,16 +3,16 @@
   "version": "0.0.1",
   "license": "Apache License, v2.0",
   "dependencies": {
-    "angular": "1.2.20",
+    "angular": "1.2.21",
     "json3": "~3.2.4",
     "jquery": "~2.0.3",
     "es5-shim": "~2.0.8",
-    "angular-resource": "~1.2.20",
-    "angular-cookies": "~1.2.20",
-    "angular-sanitize": "~1.2.20",
+    "angular-resource": "~1.2.21",
+    "angular-cookies": "~1.2.21",
+    "angular-sanitize": "~1.2.21",
     "bootstrap": "~3.0.3",
     "angular-bootstrap": "0.11.0",
-    "angular-route": "~1.2.20",
+    "angular-route": "~1.2.21",
     "underscore": "~1.5.2",
     "ng-grid": "2.0.11",
     "d3": "3.4.4",
@@ -23,8 +23,8 @@
     "malhar-angular-dashboard": "https://github.com/DataTorrent/malhar-angular-dashboard.git#master"
   },
   "devDependencies": {
-    "angular-mocks": "~1.2.20",
-    "angular-scenario": "~1.2.20"
+    "angular-mocks": "~1.2.21",
+    "angular-scenario": "~1.2.21"
   },
   "resolutions": {
     "jquery": "~2.0.3",
