@@ -66,7 +66,7 @@ angular.module('ui.models')
 
     return RandomTopNDataModel;
   })
-  .factory('RandomTimeSeriesDataModel', function (WidgetDataModel, $interval) {
+  .factory('RandomBaseTimeSeriesDataModel', function (WidgetDataModel, $interval) {
     function RandomTimeSeriesDataModel() {
     }
 
@@ -80,7 +80,7 @@ angular.module('ui.models')
       function nextValue() {
         chartValue += Math.random() * 40 - 20;
         chartValue = chartValue < 0 ? 0 : chartValue > 100 ? 100 : chartValue;
-        return chartValue;
+        return Math.round(chartValue);
       }
 
       var now = Date.now();
@@ -90,14 +90,8 @@ angular.module('ui.models')
           value: nextValue()
         });
       }
-      var chart = {
-        data: data,
-        max: max,
-        chartOptions: {
-          vAxis: {}
-        }
-      };
-      this.updateScope(chart);
+
+      this.updateScope(data);
 
       this.intervalPromise = $interval(function () {
         data.shift();
@@ -106,12 +100,7 @@ angular.module('ui.models')
           value: nextValue()
         });
 
-        var chart = {
-          data: data,
-          max: max
-        };
-
-        this.updateScope(chart);
+        this.updateScope(data);
       }.bind(this), 1000);
     };
 
@@ -119,6 +108,49 @@ angular.module('ui.models')
       WidgetDataModel.prototype.destroy.call(this);
       $interval.cancel(this.intervalPromise);
     };
+
+    return RandomTimeSeriesDataModel;
+  })
+  .factory('RandomTimeSeriesDataModel', function (RandomBaseTimeSeriesDataModel) {
+    function RandomTimeSeriesDataModel() {
+    }
+
+    RandomTimeSeriesDataModel.prototype = Object.create(RandomBaseTimeSeriesDataModel.prototype);
+
+    angular.extend(RandomTimeSeriesDataModel.prototype, {
+      updateScope: function (data) {
+        var chart = {
+          data: data,
+          max: 30,
+          chartOptions: {
+            vAxis: {}
+          }
+        };
+
+        RandomBaseTimeSeriesDataModel.prototype.updateScope.call(this, chart);
+      }
+    });
+
+    return RandomTimeSeriesDataModel;
+  })
+  .factory('RandomNVD3TimeSeriesDataModel', function (RandomBaseTimeSeriesDataModel) {
+    function RandomTimeSeriesDataModel() {
+    }
+
+    RandomTimeSeriesDataModel.prototype = Object.create(RandomBaseTimeSeriesDataModel.prototype);
+
+    angular.extend(RandomTimeSeriesDataModel.prototype, {
+      updateScope: function (data) {
+        var chart = [
+          {
+            key: 'Data',
+            values: data
+          }
+        ];
+
+        RandomBaseTimeSeriesDataModel.prototype.updateScope.call(this, chart);
+      }
+    });
 
     return RandomTimeSeriesDataModel;
   })
@@ -162,64 +194,6 @@ angular.module('ui.models')
       ];
 
       this.updateScope(widgetData);
-    };
-
-    RandomTimeSeriesDataModel.prototype.destroy = function () {
-      WidgetDataModel.prototype.destroy.call(this);
-      $interval.cancel(this.intervalPromise);
-    };
-
-    return RandomTimeSeriesDataModel;
-  })
-  .factory('RandomNVD3TimeSeriesDataModel', function (WidgetDataModel, $interval) {
-    function RandomTimeSeriesDataModel() {
-    }
-
-    RandomTimeSeriesDataModel.prototype = Object.create(WidgetDataModel.prototype);
-
-    RandomTimeSeriesDataModel.prototype.init = function () {
-      var max = 30;
-      var data = [];
-      var chartValue = 50;
-
-      function nextValue() {
-        chartValue += Math.random() * 40 - 20;
-        chartValue = chartValue < 0 ? 0 : chartValue > 100 ? 100 : chartValue;
-        return Math.round(chartValue);
-      }
-
-      var now = Date.now();
-      for (var i = max - 1; i >= 0; i--) {
-        data.push({
-          timestamp: now - i * 1000,
-          value: nextValue()
-        });
-      }
-      var chart = [
-        {
-          key: 'Data',
-          values: data
-        }
-      ];
-
-      this.updateScope(chart);
-
-      this.intervalPromise = $interval(function () {
-        data.shift();
-        data.push({
-          timestamp: Date.now(),
-          value: nextValue()
-        });
-
-        var chart = [
-          {
-            key: 'Data',
-            values: data
-          }
-        ];
-
-        this.updateScope(chart);
-      }.bind(this), 1000);
     };
 
     RandomTimeSeriesDataModel.prototype.destroy = function () {
