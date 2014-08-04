@@ -17,6 +17,39 @@
 'use strict';
 
 angular.module('ui.models')
+  .factory('RandomBaseDataModel', function (WidgetDataModel, Visibility) {
+    function RandomBaseDataModel() {
+    }
+
+    RandomBaseDataModel.prototype = Object.create(WidgetDataModel.prototype);
+    RandomBaseDataModel.prototype.constructor = WidgetDataModel;
+
+    angular.extend(RandomBaseDataModel.prototype, {
+      init: function () {
+        this.stopUpdates = false;
+        this.visibilityListener = Visibility.change(function (e, state) {
+          if (state === 'hidden') {
+            this.stopUpdates = true;
+          } else {
+            this.stopUpdates = false;
+          }
+        }.bind(this));
+      },
+
+      updateScope: function (data) {
+        if (!this.stopUpdates) {
+          WidgetDataModel.prototype.updateScope.call(this, data);
+        }
+      },
+
+      destroy: function () {
+        WidgetDataModel.prototype.destroy.call(this);
+        Visibility.unbind(this.visibilityListener);
+      }
+    });
+
+    return RandomBaseDataModel;
+  })
   .factory('RandomPercentageDataModel', function (WidgetDataModel, $interval) {
     function RandomPercentageDataModel() {
     }
@@ -66,13 +99,16 @@ angular.module('ui.models')
 
     return RandomTopNDataModel;
   })
-  .factory('RandomBaseTimeSeriesDataModel', function (WidgetDataModel, $interval) {
+  .factory('RandomBaseTimeSeriesDataModel', function (RandomBaseDataModel, $interval) {
     function RandomTimeSeriesDataModel() {
     }
 
-    RandomTimeSeriesDataModel.prototype = Object.create(WidgetDataModel.prototype);
+    RandomTimeSeriesDataModel.prototype = Object.create(RandomBaseDataModel.prototype);
+    RandomTimeSeriesDataModel.prototype.constructor = RandomBaseDataModel;
 
     RandomTimeSeriesDataModel.prototype.init = function () {
+      RandomBaseDataModel.prototype.init.call(this);
+
       var max = 30;
       var data = [];
       var chartValue = 50;
@@ -105,7 +141,7 @@ angular.module('ui.models')
     };
 
     RandomTimeSeriesDataModel.prototype.destroy = function () {
-      WidgetDataModel.prototype.destroy.call(this);
+      RandomBaseDataModel.prototype.destroy.call(this);
       $interval.cancel(this.intervalPromise);
     };
 

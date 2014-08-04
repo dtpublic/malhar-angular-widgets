@@ -16,7 +16,7 @@
 
 angular.module('ui.widgets', ['ngGrid', 'nvd3ChartDirectives']);
 angular.module('ui.websocket', ['ui.notify']);
-angular.module('ui.models', ['ui.websocket']);
+angular.module('ui.models', ['ui.visibility', 'ui.websocket']);
 
 /*
  * Copyright (c) 2014 DataTorrent, Inc. ALL Rights Reserved.
@@ -37,6 +37,39 @@ angular.module('ui.models', ['ui.websocket']);
 'use strict';
 
 angular.module('ui.models')
+  .factory('RandomBaseDataModel', function (WidgetDataModel, Visibility) {
+    function RandomBaseDataModel() {
+    }
+
+    RandomBaseDataModel.prototype = Object.create(WidgetDataModel.prototype);
+    RandomBaseDataModel.prototype.constructor = WidgetDataModel;
+
+    angular.extend(RandomBaseDataModel.prototype, {
+      init: function () {
+        this.stopUpdates = false;
+        this.visibilityListener = Visibility.change(function (e, state) {
+          if (state === 'hidden') {
+            this.stopUpdates = true;
+          } else {
+            this.stopUpdates = false;
+          }
+        }.bind(this));
+      },
+
+      updateScope: function (data) {
+        if (!this.stopUpdates) {
+          WidgetDataModel.prototype.updateScope.call(this, data);
+        }
+      },
+
+      destroy: function () {
+        WidgetDataModel.prototype.destroy.call(this);
+        Visibility.unbind(this.visibilityListener);
+      }
+    });
+
+    return RandomBaseDataModel;
+  })
   .factory('RandomPercentageDataModel', function (WidgetDataModel, $interval) {
     function RandomPercentageDataModel() {
     }
@@ -86,13 +119,16 @@ angular.module('ui.models')
 
     return RandomTopNDataModel;
   })
-  .factory('RandomBaseTimeSeriesDataModel', function (WidgetDataModel, $interval) {
+  .factory('RandomBaseTimeSeriesDataModel', function (RandomBaseDataModel, $interval) {
     function RandomTimeSeriesDataModel() {
     }
 
-    RandomTimeSeriesDataModel.prototype = Object.create(WidgetDataModel.prototype);
+    RandomTimeSeriesDataModel.prototype = Object.create(RandomBaseDataModel.prototype);
+    RandomTimeSeriesDataModel.prototype.constructor = RandomBaseDataModel;
 
     RandomTimeSeriesDataModel.prototype.init = function () {
+      RandomBaseDataModel.prototype.init.call(this);
+
       var max = 30;
       var data = [];
       var chartValue = 50;
@@ -125,7 +161,7 @@ angular.module('ui.models')
     };
 
     RandomTimeSeriesDataModel.prototype.destroy = function () {
-      WidgetDataModel.prototype.destroy.call(this);
+      RandomBaseDataModel.prototype.destroy.call(this);
       $interval.cancel(this.intervalPromise);
     };
 
@@ -357,6 +393,28 @@ angular.module('ui.models')
     return PieChartDataModel;
   });
 
+/*
+ * Copyright (c) 2014 DataTorrent, Inc. ALL Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+'use strict';
+
+angular.module('ui.visibility', [])
+  .factory('Visibility', function ($window) {
+    return $window.Visibility;
+  });
 'use strict';
 
 angular.module('ui.websocket')

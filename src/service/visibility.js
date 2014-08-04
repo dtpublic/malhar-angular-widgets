@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
-angular.module('ui.widgets', ['ngGrid', 'nvd3ChartDirectives']);
-angular.module('ui.websocket', ['ui.notify']);
-angular.module('ui.models', ['ui.visibility', 'ui.websocket']);
+'use strict';
+
+angular.module('ui.visibility', [])
+  .factory('Visibility', function ($window) {
+    return $window.Visibility;
+  });
