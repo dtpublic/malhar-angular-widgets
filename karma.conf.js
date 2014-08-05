@@ -19,6 +19,7 @@ module.exports = function(config) {
       'bower_components/angularjs-nvd3-directives/dist/angularjs-nvd3-directives.min.js',
       'bower_components/pines-notify/pnotify.core.js',
       'bower_components/angular-pines-notify/src/pnotify.js',
+      'bower_components/visibilityjs/lib/visibility.core.js',
       'src/vendor/{,*/}*.js',
       'src/modules.js',
       'src/service/{,*/}*.js',

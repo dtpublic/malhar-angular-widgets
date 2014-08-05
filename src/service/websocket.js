@@ -26,7 +26,7 @@ angular.module('ui.websocket')
     var webSocketObject; // for testing only
 
     return {
-      $get: function ($q,  $rootScope, $timeout, notificationService, visibly, $log, $window) {
+      $get: function ($q, $rootScope, $timeout, notificationService, Visibility, $log, $window) {
         if (!webSocketURL && !webSocketObject) {
           throw 'WebSocket URL is not defined';
         }
@@ -106,36 +106,26 @@ angular.module('ui.websocket')
           }
         };
 
-        var timeoutPromise;
+        if (Visibility.isSupported()) {
+          var timeoutPromise;
 
-        visibly.onHidden(function () {
-          timeoutPromise = $timeout(function () {
-            stopUpdates = true;
-            timeoutPromise = null;
-          }, visibilityTimeout);
-        });
+          Visibility.change(function (e, state) {
+            if (state === 'hidden') {
+              timeoutPromise = $timeout(function () {
+                stopUpdates = true;
+                timeoutPromise = null;
+              }, visibilityTimeout);
+            } else {
+              stopUpdates = false;
 
-        visibly.onVisible(function () {
-          if (stopUpdates && !webSocketError) {
-            notificationService.notify({
-              title: 'Warning',
-              text: 'Page has not been visible for more than 60 seconds. WebSocket real-time updates have been suspended to conserve system resources. ' +
-                'Refreshing the page is recommended.',
-              type: 'warning',
-              icon: false,
-              hide: false,
-              history: false
-            });
-          }
+              if (timeoutPromise) {
+                $timeout.cancel(timeoutPromise);
+              }
 
-          stopUpdates = false;
-
-          if (timeoutPromise) {
-            $timeout.cancel(timeoutPromise);
-          }
-
-          $log.debug('visible');
-        });
+              $log.debug('visible');
+            }
+          }.bind(this));
+        }
 
         return {
           send: function (message) {
@@ -170,7 +160,7 @@ angular.module('ui.websocket')
               // ...it's $digest method should be called
               // after the callback has been triggered, so
               // we have to wrap the function.
-              var wrappedCallback = function() {
+              var wrappedCallback = function () {
                 callback.apply({}, arguments);
                 $scope.$digest();
               };
