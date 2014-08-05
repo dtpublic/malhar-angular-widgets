@@ -70,11 +70,11 @@ angular.module('ui.models')
 
     return RandomBaseDataModel;
   })
-  .factory('RandomPercentageDataModel', function (WidgetDataModel, $interval) {
+  .factory('RandomPercentageDataModel', function (RandomBaseDataModel, $interval) {
     function RandomPercentageDataModel() {
     }
 
-    RandomPercentageDataModel.prototype = Object.create(WidgetDataModel.prototype);
+    RandomPercentageDataModel.prototype = Object.create(RandomBaseDataModel.prototype);
 
     RandomPercentageDataModel.prototype.init = function () {
       var value = 50;
@@ -88,17 +88,17 @@ angular.module('ui.models')
     };
 
     RandomPercentageDataModel.prototype.destroy = function () {
-      WidgetDataModel.prototype.destroy.call(this);
+      RandomBaseDataModel.prototype.destroy.call(this);
       $interval.cancel(this.intervalPromise);
     };
 
     return RandomPercentageDataModel;
   })
-  .factory('RandomTopNDataModel', function (WidgetDataModel, $interval) {
+  .factory('RandomTopNDataModel', function (RandomBaseDataModel, $interval) {
     function RandomTopNDataModel() {
     }
 
-    RandomTopNDataModel.prototype = Object.create(WidgetDataModel.prototype);
+    RandomTopNDataModel.prototype = Object.create(RandomBaseDataModel.prototype);
 
     RandomTopNDataModel.prototype.init = function () {
       this.intervalPromise = $interval(function () {
@@ -113,7 +113,7 @@ angular.module('ui.models')
     };
 
     RandomTopNDataModel.prototype.destroy = function () {
-      WidgetDataModel.prototype.destroy.call(this);
+      RandomBaseDataModel.prototype.destroy.call(this);
       $interval.cancel(this.intervalPromise);
     };
 
@@ -210,11 +210,11 @@ angular.module('ui.models')
 
     return RandomTimeSeriesDataModel;
   })
-  .factory('RandomMinutesDataModel', function (WidgetDataModel, $interval) {
+  .factory('RandomMinutesDataModel', function (RandomBaseDataModel, $interval) {
     function RandomTimeSeriesDataModel() {
     }
 
-    RandomTimeSeriesDataModel.prototype = Object.create(WidgetDataModel.prototype);
+    RandomTimeSeriesDataModel.prototype = Object.create(RandomBaseDataModel.prototype);
 
     RandomTimeSeriesDataModel.prototype.init = function () {
       this.generateChart();
@@ -253,7 +253,7 @@ angular.module('ui.models')
     };
 
     RandomTimeSeriesDataModel.prototype.destroy = function () {
-      WidgetDataModel.prototype.destroy.call(this);
+      RandomBaseDataModel.prototype.destroy.call(this);
       $interval.cancel(this.intervalPromise);
     };
 
