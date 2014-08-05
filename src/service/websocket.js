@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2014 DataTorrent, Inc. ALL Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 'use strict';
 
 angular.module('ui.websocket')
@@ -5,17 +21,17 @@ angular.module('ui.websocket')
     return $window.visibly;
   })
   .provider('webSocket', function () {
-
+    var visibilityTimeout = 20000;
     var webSocketURL;
     var webSocketObject; // for testing only
 
     return {
-      $get: function ($q,  $rootScope, $timeout, notificationService, visibly) {
+      $get: function ($q,  $rootScope, $timeout, notificationService, visibly, $log, $window) {
         if (!webSocketURL && !webSocketObject) {
           throw 'WebSocket URL is not defined';
         }
 
-        var socket = !webSocketObject ? new WebSocket(webSocketURL) : webSocketObject;
+        var socket = !webSocketObject ? new $window.WebSocket(webSocketURL) : webSocketObject;
 
         var deferred = $q.defer();
 
@@ -75,6 +91,17 @@ angular.module('ui.websocket')
           var topic = message.topic;
 
           if (topicMap.hasOwnProperty(topic)) {
+            if ($window.WS_DEBUG) {
+              if ($window.WS_DEBUG === true) {
+                $log.debug('WebSocket ', topic, ' => ', message.data);
+              }
+              else {
+                var search = new RegExp($window.WS_DEBUG + '');
+                if (search.test(topic)) {
+                  $log.debug('WebSocket ', topic, ' => ', message.data);
+                }
+              }
+            }
             topicMap[topic].fire(message.data);
           }
         };
@@ -85,11 +112,10 @@ angular.module('ui.websocket')
           timeoutPromise = $timeout(function () {
             stopUpdates = true;
             timeoutPromise = null;
-          }, 60000);
+          }, visibilityTimeout);
         });
 
         visibly.onVisible(function () {
-          /*
           if (stopUpdates && !webSocketError) {
             notificationService.notify({
               title: 'Warning',
@@ -101,7 +127,6 @@ angular.module('ui.websocket')
               history: false
             });
           }
-          */
 
           stopUpdates = false;
 
@@ -109,7 +134,7 @@ angular.module('ui.websocket')
             $timeout.cancel(timeoutPromise);
           }
 
-          console.log('visible');
+          $log.debug('visible');
         });
 
         return {
@@ -117,7 +142,7 @@ angular.module('ui.websocket')
             var msg = JSON.stringify(message);
 
             deferred.promise.then(function () {
-              console.log('send ' + msg);
+              $log.debug('send ' + msg);
               socket.send(msg);
             });
           },
@@ -125,20 +150,41 @@ angular.module('ui.websocket')
           subscribe: function (topic, callback, $scope) {
             var callbacks = topicMap[topic];
 
+            // If a jQuery.Callbacks object has not been created for this
+            // topic, one should be created and a "subscribe" message 
+            // should be sent.
             if (!callbacks) {
-              var message = { type: 'subscribe', topic: topic }; // subscribe message
+
+              // send the subscribe message
+              var message = { type: 'subscribe', topic: topic };
               this.send(message);
 
+              // create the Callbacks object
               callbacks = jQuery.Callbacks();
               topicMap[topic] = callbacks;
             }
 
-            callbacks.add(callback);
-
+            // When scope is provided...
             if ($scope) {
+
+              // ...it's $digest method should be called
+              // after the callback has been triggered, so
+              // we have to wrap the function.
+              var wrappedCallback = function() {
+                callback.apply({}, arguments);
+                $scope.$digest();
+              };
+              callbacks.add(wrappedCallback);
+
+              // We should also be listening for the destroy
+              // event so we can automatically unsubscribe.
               $scope.$on('$destroy', function () {
-                this.unsubscribe(topic, callback);
+                this.unsubscribe(topic, wrappedCallback);
               }.bind(this));
+
+            }
+            else {
+              callbacks.add(callback);
             }
           },
 
@@ -149,6 +195,10 @@ angular.module('ui.websocket')
             }
           }
         };
+      },
+
+      setVisibilityTimeout: function (timeout) {
+        visibilityTimeout = timeout;
       },
 
       setWebSocketURL: function (wsURL) {
