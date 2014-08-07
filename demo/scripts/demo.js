@@ -82,6 +82,9 @@ angular.module('app', [
         directive: 'wt-bar-chart',
         dataAttrName: 'data',
         dataModelType: RandomMinutesDataModel,
+        dataModelArgs: {
+          limit: 1000
+        },
         style: {
           width: '50%'
         }

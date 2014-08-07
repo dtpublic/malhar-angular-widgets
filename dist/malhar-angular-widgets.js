@@ -211,7 +211,8 @@ angular.module('ui.models')
     return RandomTimeSeriesDataModel;
   })
   .factory('RandomMinutesDataModel', function (RandomBaseDataModel, $interval) {
-    function RandomTimeSeriesDataModel() {
+    function RandomTimeSeriesDataModel(options) {
+      this.limit = (options && options.limit) ? options.limit : 500;
     }
 
     RandomTimeSeriesDataModel.prototype = Object.create(RandomBaseDataModel.prototype);
@@ -224,7 +225,7 @@ angular.module('ui.models')
     RandomTimeSeriesDataModel.prototype.generateChart = function () {
       var minuteCount = 30;
       var data = [];
-      var limit = 500;
+      var limit = this.limit;
       var chartValue = limit / 2;
 
       function nextValue() {
