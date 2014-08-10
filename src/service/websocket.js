@@ -168,9 +168,9 @@ angular.module('ui.websocket')
 
               // We should also be listening for the destroy
               // event so we can automatically unsubscribe.
-              $scope.$on('$destroy', function () {
+              $scope.$on('$destroy', angular.bind(this, function () {
                 this.unsubscribe(topic, wrappedCallback);
-              }.bind(this));
+              }));
 
             }
             else {
@@ -181,7 +181,15 @@ angular.module('ui.websocket')
           unsubscribe: function (topic, callback) {
             if (topicMap.hasOwnProperty(topic)) {
               var callbacks = topicMap[topic];
-              callbacks.remove(callback); //TODO remove topic from topicMap if callbacks is empty
+              callbacks.remove(callback);
+
+              // callbacks.has() will return false
+              // if there are no more handlers
+              // registered in this callbacks collection.
+              if (!callbacks.has()) {
+                var message = { type: 'unsubscribe', topic: topic };
+                this.send(message);
+              }
             }
           }
         };
