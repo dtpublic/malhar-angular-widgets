@@ -17,25 +17,24 @@
 
 describe('Service: websocket', function () {
 
-  var webSocket, webSocketObject, notificationService;
+  var webSocket, webSocketObject, notificationService, $rootScope;
 
   beforeEach(module('ui.websocket', function(webSocketProvider) {
     webSocketObject = {
-      send: function () {}
+      send: jasmine.createSpy()
     };
 
     webSocketProvider.setWebSocketObject(webSocketObject);
   }));
 
-  beforeEach(inject(function (_webSocket_, _notificationService_) {
+  beforeEach(inject(function (_webSocket_, _notificationService_, _$rootScope_) {
     webSocket = _webSocket_;
     notificationService = _notificationService_;
+    $rootScope = _$rootScope_;
   }));
 
   it('should send message when WebSocket connection is opened', inject(function () {
     expect(webSocketObject.onopen).toBeDefined();
-
-    spyOn(webSocketObject, 'send');
 
     webSocket.send({});
 
@@ -66,6 +65,13 @@ describe('Service: websocket', function () {
 
     expect(listener1).toHaveBeenCalledWith({ value: 50 });
     expect(listener2).toHaveBeenCalledWith({ value: 50 });
+  });
+
+  it('should send a subscribe message', function() {
+    var listener1 = jasmine.createSpy();
+    spyOn(webSocket, 'send');
+    webSocket.subscribe('testing', listener1);
+    expect(webSocket.send).toHaveBeenCalledWith({ type: 'subscribe', topic: 'testing' });
   });
 
   it('should unsubscribe', function () {
@@ -113,8 +119,39 @@ describe('Service: websocket', function () {
     expect(notificationService.notify).toHaveBeenCalled();
   });
 
-  it('should unsubscribe on scope destroy', function () {
-    //TODO
+  it('should call unsubscribe on scope destroy', function () {
+    var listener = jasmine.createSpy();
+    var scope = $rootScope.$new();
+
+    spyOn(webSocket, 'unsubscribe');
+
+    webSocket.subscribe('test', listener, scope);
+
+    expect(webSocket.unsubscribe).not.toHaveBeenCalled();
+
+    scope.$destroy();
+
+    expect(webSocket.unsubscribe).toHaveBeenCalled();
+
+  });
+
+  it('should send an unsubscribe message when there are no more listeners for a given topic', function() {
+    
+    var listener1 = jasmine.createSpy();
+    spyOn(webSocket, 'send');
+    webSocket.subscribe('testing', listener1);
+    expect(webSocket.send).toHaveBeenCalledWith({ type: 'subscribe', topic: 'testing' });
+    webSocket.unsubscribe('testing', listener1);
+    expect(webSocket.send).toHaveBeenCalledWith({ type: 'unsubscribe', topic: 'testing' });
+  });
+
+  it('should send a subscribe method again if a topic has previously been subscribed to', function() {
+    var listener1 = jasmine.createSpy();
+    spyOn(webSocket, 'send');
+    webSocket.subscribe('testing', listener1);
+    expect(webSocket.send).toHaveBeenCalledWith({ type: 'subscribe', topic: 'testing' });
+    webSocket.unsubscribe('testing', listener1);
+    expect(webSocket.send).toHaveBeenCalledWith({ type: 'unsubscribe', topic: 'testing' });
   });
 
 });
