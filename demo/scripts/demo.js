@@ -73,6 +73,9 @@ angular.module('app', [
         directive: 'wt-nvd3-line-chart',
         dataAttrName: 'data',
         dataModelType: RandomNVD3TimeSeriesDataModel,
+        dataModelArgs: {
+          rate: 40
+        },
         style: {
           width: '50%'
         }

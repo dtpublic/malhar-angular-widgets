@@ -120,7 +120,8 @@ angular.module('ui.models')
     return RandomTopNDataModel;
   })
   .factory('RandomBaseTimeSeriesDataModel', function (RandomBaseDataModel, $interval) {
-    function RandomTimeSeriesDataModel() {
+    function RandomTimeSeriesDataModel(options) {
+      this.rate = (options && options.rate) ? options.rate : 50;
     }
 
     RandomTimeSeriesDataModel.prototype = Object.create(RandomBaseDataModel.prototype);
@@ -132,9 +133,10 @@ angular.module('ui.models')
       var max = 30;
       var data = [];
       var chartValue = 50;
+      var rate = this.rate;
 
       function nextValue() {
-        chartValue += Math.random() * 40 - 20;
+        chartValue += Math.random() * rate - rate/2;
         chartValue = chartValue < 0 ? 0 : chartValue > 100 ? 100 : chartValue;
         return Math.round(chartValue);
       }
@@ -168,7 +170,8 @@ angular.module('ui.models')
     return RandomTimeSeriesDataModel;
   })
   .factory('RandomTimeSeriesDataModel', function (RandomBaseTimeSeriesDataModel) {
-    function RandomTimeSeriesDataModel() {
+    function RandomTimeSeriesDataModel(options) {
+      RandomBaseTimeSeriesDataModel.call(this, options);
     }
 
     RandomTimeSeriesDataModel.prototype = Object.create(RandomBaseTimeSeriesDataModel.prototype);
@@ -190,7 +193,8 @@ angular.module('ui.models')
     return RandomTimeSeriesDataModel;
   })
   .factory('RandomNVD3TimeSeriesDataModel', function (RandomBaseTimeSeriesDataModel) {
-    function RandomTimeSeriesDataModel() {
+    function RandomTimeSeriesDataModel(options) {
+      RandomBaseTimeSeriesDataModel.call(this, options);
     }
 
     RandomTimeSeriesDataModel.prototype = Object.create(RandomBaseTimeSeriesDataModel.prototype);
