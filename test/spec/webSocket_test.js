@@ -145,13 +145,15 @@ describe('Service: websocket', function () {
     expect(webSocket.send).toHaveBeenCalledWith({ type: 'unsubscribe', topic: 'testing' });
   });
 
-  it('should send a subscribe method again if a topic has previously been subscribed to', function() {
+  it('should send a subscribe message again if a topic has previously been unsubscribed to', function() {
     var listener1 = jasmine.createSpy();
     spyOn(webSocket, 'send');
     webSocket.subscribe('testing', listener1);
     expect(webSocket.send).toHaveBeenCalledWith({ type: 'subscribe', topic: 'testing' });
     webSocket.unsubscribe('testing', listener1);
     expect(webSocket.send).toHaveBeenCalledWith({ type: 'unsubscribe', topic: 'testing' });
+    webSocket.subscribe('testing', listener1);
+    expect(webSocket.send.calls[2].args[0]).toEqual({ type: 'subscribe', topic: 'testing' });
   });
 
 });

@@ -187,8 +187,14 @@ angular.module('ui.websocket')
               // if there are no more handlers
               // registered in this callbacks collection.
               if (!callbacks.has()) {
+                
+                // Send the unsubscribe message first
                 var message = { type: 'unsubscribe', topic: topic };
                 this.send(message);
+
+                // Then remove the callbacks object for this topic
+                delete topicMap[topic];
+                
               }
             }
           }
