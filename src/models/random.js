@@ -132,7 +132,9 @@ angular.module('ui.models')
       this.updateScope(data);
 
       this.intervalPromise = $interval(function () {
-        data.shift();
+        if (data.length >= max) {
+          data.shift();
+        }
         data.push({
           timestamp: Date.now(),
           value: nextValue()
@@ -171,6 +173,32 @@ angular.module('ui.models')
     });
 
     return RandomTimeSeriesDataModel;
+  })
+  .factory('RandomMetricsTimeSeriesDataModel', function (RandomBaseTimeSeriesDataModel) {
+    function RandomMetricsTimeSeriesDataModel(options) {
+      RandomBaseTimeSeriesDataModel.call(this, options);
+    }
+
+    RandomMetricsTimeSeriesDataModel.prototype = Object.create(RandomBaseTimeSeriesDataModel.prototype);
+
+    angular.extend(RandomMetricsTimeSeriesDataModel.prototype, {
+      updateScope: function (data) {
+        var chart = [
+          {
+            key: 'Stream1',
+            values: data
+          },
+          {
+            key: 'Stream2',
+            values: _.map(data, function (item) { return { timestamp:item.timestamp, value: item.value + 10 }; })
+          }
+        ];
+
+        RandomBaseTimeSeriesDataModel.prototype.updateScope.call(this, chart);
+      }
+    });
+
+    return RandomMetricsTimeSeriesDataModel;
   })
   .factory('RandomNVD3TimeSeriesDataModel', function (RandomBaseTimeSeriesDataModel) {
     function RandomTimeSeriesDataModel(options) {

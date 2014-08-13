@@ -33,7 +33,7 @@ angular.module('app', [
       });
   })
   .controller('DemoCtrl', function ($scope, $interval, RandomTopNDataModel, RandomTimeSeriesDataModel,
-                                    RandomMinutesDataModel, RandomNVD3TimeSeriesDataModel) {
+                                    RandomMinutesDataModel, RandomNVD3TimeSeriesDataModel, RandomMetricsTimeSeriesDataModel) {
     var widgetDefinitions = [
       {
         name: 'time',
@@ -60,10 +60,10 @@ angular.module('app', [
         }
       },
       {
-        name: 'Line Chart',
-        directive: 'wt-line-chart',
-        dataAttrName: 'chart',
-        dataModelType: RandomTimeSeriesDataModel,
+        name: 'Metrics Chart',
+        directive: 'wt-metrics-chart',
+        dataAttrName: 'data',
+        dataModelType: RandomMetricsTimeSeriesDataModel,
         style: {
           width: '50%'
         }
@@ -76,6 +76,15 @@ angular.module('app', [
         dataModelArgs: {
           rate: 40
         },
+        style: {
+          width: '50%'
+        }
+      },
+      {
+        name: 'Line Chart',
+        directive: 'wt-line-chart',
+        dataAttrName: 'chart',
+        dataModelType: RandomTimeSeriesDataModel,
         style: {
           width: '50%'
         }
@@ -114,8 +123,9 @@ angular.module('app', [
       { name: 'time' },
       { name: 'random' },
       { name: 'scope-watch' },
-      { name: 'Line Chart' },
+      { name: 'Metrics Chart' },
       { name: 'NVD3 Line Chart' },
+      { name: 'Line Chart' },
       { name: 'Bar Chart' },
       { name: 'topN' },
       { name: 'gauge' }

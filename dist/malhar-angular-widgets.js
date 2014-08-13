@@ -152,7 +152,9 @@ angular.module('ui.models')
       this.updateScope(data);
 
       this.intervalPromise = $interval(function () {
-        data.shift();
+        if (data.length >= max) {
+          data.shift();
+        }
         data.push({
           timestamp: Date.now(),
           value: nextValue()
@@ -191,6 +193,32 @@ angular.module('ui.models')
     });
 
     return RandomTimeSeriesDataModel;
+  })
+  .factory('RandomMetricsTimeSeriesDataModel', function (RandomBaseTimeSeriesDataModel) {
+    function RandomMetricsTimeSeriesDataModel(options) {
+      RandomBaseTimeSeriesDataModel.call(this, options);
+    }
+
+    RandomMetricsTimeSeriesDataModel.prototype = Object.create(RandomBaseTimeSeriesDataModel.prototype);
+
+    angular.extend(RandomMetricsTimeSeriesDataModel.prototype, {
+      updateScope: function (data) {
+        var chart = [
+          {
+            key: 'Stream1',
+            values: data
+          },
+          {
+            key: 'Stream2',
+            values: _.map(data, function (item) { return { timestamp:item.timestamp, value: item.value + 10 }; })
+          }
+        ];
+
+        RandomBaseTimeSeriesDataModel.prototype.updateScope.call(this, chart);
+      }
+    });
+
+    return RandomMetricsTimeSeriesDataModel;
   })
   .factory('RandomNVD3TimeSeriesDataModel', function (RandomBaseTimeSeriesDataModel) {
     function RandomTimeSeriesDataModel(options) {
@@ -590,9 +618,9 @@ angular.module('ui.websocket')
 
               // We should also be listening for the destroy
               // event so we can automatically unsubscribe.
-              $scope.$on('$destroy', function () {
+              $scope.$on('$destroy', angular.bind(this, function () {
                 this.unsubscribe(topic, wrappedCallback);
-              }.bind(this));
+              }));
 
             }
             else {
@@ -603,7 +631,15 @@ angular.module('ui.websocket')
           unsubscribe: function (topic, callback) {
             if (topicMap.hasOwnProperty(topic)) {
               var callbacks = topicMap[topic];
-              callbacks.remove(callback); //TODO remove topic from topicMap if callbacks is empty
+              callbacks.remove(callback);
+
+              // callbacks.has() will return false
+              // if there are no more handlers
+              // registered in this callbacks collection.
+              if (!callbacks.has()) {
+                var message = { type: 'unsubscribe', topic: topic };
+                this.send(message);
+              }
             }
           }
         };
@@ -1303,11 +1339,11 @@ angular.module('ui.widgets')
 'use strict';
 
 angular.module('ui.widgets')
-  .directive('wtNvd3LineChart', function ($filter) {
+  .directive('wtMetricsChart', function ($filter) {
     return {
       restrict: 'A',
       replace: true,
-      templateUrl: 'template/widgets/nvd3LineChart/nvd3LineChart.html',
+      templateUrl: 'template/widgets/metricsChart/metricsChart.html',
       scope: {
         data: '=data'
       },
@@ -1316,7 +1352,7 @@ angular.module('ui.widgets')
 
         $scope.xAxisTickFormatFunction = function () {
           return function (d) {
-            return filter(d, 'HH:mm');
+            return filter(d, ':ss');
           };
         };
 
@@ -1332,6 +1368,70 @@ angular.module('ui.widgets')
         };
       },
       link: function postLink(scope) {
+        scope.data = [ //TODO
+          {
+            key: 'Data',
+            values: []
+          }
+        ];
+      }
+    };
+  });
+/*
+ * Copyright (c) 2014 DataTorrent, Inc. ALL Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+'use strict';
+
+angular.module('ui.widgets')
+  .directive('wtNvd3LineChart', function ($filter) {
+    return {
+      restrict: 'A',
+      replace: true,
+      templateUrl: 'template/widgets/nvd3LineChart/nvd3LineChart.html',
+      scope: {
+        data: '=data'
+      },
+      controller: function ($scope) {
+        var filter = $filter('date');
+
+        $scope.xAxisTickFormatFunction = function () {
+          return function (d) {
+            return filter(d, 'HH:mm:ss');
+          };
+        };
+
+        $scope.xFunction = function () {
+          return function (d) {
+            return d.timestamp;
+          };
+        };
+        $scope.yFunction = function () {
+          return function (d) {
+            return d.value;
+          };
+        };
+      },
+      link: function postLink(scope) {
+        scope.data = [
+          {
+            key: 'Data',
+            values: []
+          }
+        ];
+
         scope.$watch('data', function (data) {
           if (data && data[0] && data[0].values && (data[0].values.length > 1)) {
             var timeseries = _.sortBy(data[0].values, function (item) {
@@ -1622,6 +1722,23 @@ angular.module("ui.widgets").run(["$templateCache", function($templateCache) {
     "        </div>\n" +
     "    </div>\n" +
     "    <div wt-line-chart chart=\"chart\"></div>\n" +
+    "</div>"
+  );
+
+  $templateCache.put("template/widgets/metricsChart/metricsChart.html",
+    "<div class=\"bar-chart\">\n" +
+    "    <nvd3-line-chart\n" +
+    "            data=\"data\"\n" +
+    "            xAxisTickFormat=\"xAxisTickFormatFunction()\"\n" +
+    "            x=\"xFunction()\"\n" +
+    "            y=\"yFunction()\"\n" +
+    "            showXAxis=\"true\"\n" +
+    "            showYAxis=\"true\"\n" +
+    "            reduceXTicks=\"true\"\n" +
+    "            transitionduration=\"0\"\n" +
+    "            showLegend=\"false\"\n" +
+    "            tooltips=\"false\">\n" +
+    "    </nvd3-line-chart>\n" +
     "</div>"
   );
 
