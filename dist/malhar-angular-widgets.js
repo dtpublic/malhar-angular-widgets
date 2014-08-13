@@ -637,8 +637,14 @@ angular.module('ui.websocket')
               // if there are no more handlers
               // registered in this callbacks collection.
               if (!callbacks.has()) {
+                
+                // Send the unsubscribe message first
                 var message = { type: 'unsubscribe', topic: topic };
                 this.send(message);
+
+                // Then remove the callbacks object for this topic
+                delete topicMap[topic];
+                
               }
             }
           }
@@ -1349,10 +1355,17 @@ angular.module('ui.widgets')
       },
       controller: function ($scope) {
         var filter = $filter('date');
+        var yAxisFilter = $filter('number');
 
         $scope.xAxisTickFormatFunction = function () {
           return function (d) {
-            return filter(d, ':ss');
+            return filter(d, 'mm:ss');
+          };
+        };
+
+        $scope.yAxisTickFormatFunction = function () {
+          return function (d) {
+            return yAxisFilter(d);
           };
         };
 
@@ -1409,7 +1422,7 @@ angular.module('ui.widgets')
 
         $scope.xAxisTickFormatFunction = function () {
           return function (d) {
-            return filter(d, 'HH:mm:ss');
+            return filter(d, 'HH:mm');
           };
         };
 
@@ -1425,13 +1438,6 @@ angular.module('ui.widgets')
         };
       },
       link: function postLink(scope) {
-        scope.data = [
-          {
-            key: 'Data',
-            values: []
-          }
-        ];
-
         scope.$watch('data', function (data) {
           if (data && data[0] && data[0].values && (data[0].values.length > 1)) {
             var timeseries = _.sortBy(data[0].values, function (item) {
@@ -1730,6 +1736,7 @@ angular.module("ui.widgets").run(["$templateCache", function($templateCache) {
     "    <nvd3-line-chart\n" +
     "            data=\"data\"\n" +
     "            xAxisTickFormat=\"xAxisTickFormatFunction()\"\n" +
+    "            yAxisTickFormat=\"yAxisTickFormatFunction()\"\n" +
     "            x=\"xFunction()\"\n" +
     "            y=\"yFunction()\"\n" +
     "            showXAxis=\"true\"\n" +

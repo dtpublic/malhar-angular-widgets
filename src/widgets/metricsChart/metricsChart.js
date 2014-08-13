@@ -27,10 +27,17 @@ angular.module('ui.widgets')
       },
       controller: function ($scope) {
         var filter = $filter('date');
+        var yAxisFilter = $filter('number');
 
         $scope.xAxisTickFormatFunction = function () {
           return function (d) {
-            return filter(d, ':ss');
+            return filter(d, 'mm:ss');
+          };
+        };
+
+        $scope.yAxisTickFormatFunction = function () {
+          return function (d) {
+            return yAxisFilter(d);
           };
         };
 
