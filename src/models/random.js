@@ -101,7 +101,8 @@ angular.module('ui.models')
   })
   .factory('RandomBaseTimeSeriesDataModel', function (RandomBaseDataModel, $interval) {
     function RandomTimeSeriesDataModel(options) {
-      this.rate = (options && options.rate) ? options.rate : 50;
+      this.upperBound = (options && options.upperBound) ? options.upperBound : 100;
+      this.rate = (options && options.rate) ? options.rate : Math.round(this.upperBound/2);
     }
 
     RandomTimeSeriesDataModel.prototype = Object.create(RandomBaseDataModel.prototype);
@@ -111,13 +112,14 @@ angular.module('ui.models')
       RandomBaseDataModel.prototype.init.call(this);
 
       var max = 30;
+      var upperBound = this.upperBound;
       var data = [];
-      var chartValue = 50;
+      var chartValue = Math.round(upperBound / 2);
       var rate = this.rate;
 
       function nextValue() {
         chartValue += Math.random() * rate - rate/2;
-        chartValue = chartValue < 0 ? 0 : chartValue > 100 ? 100 : chartValue;
+        chartValue = chartValue < 0 ? 0 : chartValue > upperBound ? upperBound : chartValue;
         return Math.round(chartValue);
       }
 
