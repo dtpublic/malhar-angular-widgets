@@ -1353,7 +1353,7 @@ angular.module('ui.widgets')
       replace: true,
       templateUrl: 'template/widgets/metricsChart/metricsChart.html',
       scope: {
-        data: '=',
+        data: '=?',
         metrics: '=',
         controller: '='
       },
