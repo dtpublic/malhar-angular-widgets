@@ -121,7 +121,8 @@ angular.module('ui.models')
   })
   .factory('RandomBaseTimeSeriesDataModel', function (RandomBaseDataModel, $interval) {
     function RandomTimeSeriesDataModel(options) {
-      this.rate = (options && options.rate) ? options.rate : 50;
+      this.upperBound = (options && options.upperBound) ? options.upperBound : 100;
+      this.rate = (options && options.rate) ? options.rate : Math.round(this.upperBound/2);
     }
 
     RandomTimeSeriesDataModel.prototype = Object.create(RandomBaseDataModel.prototype);
@@ -131,13 +132,14 @@ angular.module('ui.models')
       RandomBaseDataModel.prototype.init.call(this);
 
       var max = 30;
+      var upperBound = this.upperBound;
       var data = [];
-      var chartValue = 50;
+      var chartValue = Math.round(upperBound / 2);
       var rate = this.rate;
 
       function nextValue() {
         chartValue += Math.random() * rate - rate/2;
-        chartValue = chartValue < 0 ? 0 : chartValue > 100 ? 100 : chartValue;
+        chartValue = chartValue < 0 ? 0 : chartValue > upperBound ? upperBound : chartValue;
         return Math.round(chartValue);
       }
 
@@ -1345,13 +1347,15 @@ angular.module('ui.widgets')
 'use strict';
 
 angular.module('ui.widgets')
-  .directive('wtMetricsChart', function ($filter) {
+  .directive('wtMetricsChart', function ($filter, MetricsChartHistory) {
     return {
       restrict: 'A',
       replace: true,
       templateUrl: 'template/widgets/metricsChart/metricsChart.html',
       scope: {
-        data: '=data'
+        data: '=',
+        metrics: '=',
+        controller: '='
       },
       controller: function ($scope) {
         var filter = $filter('date');
@@ -1379,16 +1383,107 @@ angular.module('ui.widgets')
             return d.value;
           };
         };
+
+        $scope.chartCallback = function () { // callback to access nvd3 chart
+          //console.log('chartCallback');
+          //console.log(arguments);
+          //console.log(chart.legend.dispatch.);
+          //chart.legend.dispatch.on('legendClick', function(newState) {
+          //  console.log(newState);
+          //});
+        };
       },
       link: function postLink(scope) {
-        scope.data = [ //TODO
-          {
-            key: 'Data',
-            values: []
-          }
-        ];
+        scope.data = [];
+
+        if (scope.controller) {
+          var chartHistory = new MetricsChartHistory(scope, scope.metrics);
+          scope.controller.addPoint = function (point) {
+            chartHistory.addPoint(point);
+          };
+        }
       }
     };
+  })
+  .factory('MetricsChartHistory', function () {
+    function MetricsChartHistory(scope, metrics) {
+      this.scope = scope;
+      this.history = [];
+      this.metrics = metrics;
+
+      this.series = [];
+
+      _.each(metrics, function (metric) {
+        this.series.push({
+          key: metric.key,
+          disabled: !metric.visible,
+          color: metric.color
+        });
+      }.bind(this));
+    }
+
+    angular.extend(MetricsChartHistory.prototype, {
+      addPoint: function (point) {
+        var timeLimit = 30 * 1000;
+        var now = Date.now();
+        var startTime = now - timeLimit;
+
+        var ind = _.findIndex(this.history, function (historyPoint) {
+          return historyPoint.timestamp >= startTime;
+        });
+        if (ind > 1) {
+          this.history = _.rest(this.history, ind - 1);
+        }
+
+        var historyPoint = {
+          timestamp: now,
+          data: point
+        };
+        this.history.push(historyPoint);
+
+        _.each(this.metrics, function (metric, index) {
+          var metricKey = metric.key;
+
+          var values = _.map(this.history, function (historyPoint) {
+            return {
+              timestamp: historyPoint.timestamp,
+              value: Math.round(parseInt(historyPoint.data[metricKey]))
+            };
+          });
+
+          this.series[index].values = values;
+        }.bind(this));
+
+        /*
+         //TODO this is workaround to have fixed x axis scale when no enough date is available
+         chart.push({
+         key: 'Left Value',
+         values: [
+         {timestamp: startTime, value: 0}
+         ]
+         });
+         */
+
+        /*
+         var max = _.max(history, function (historyPoint) { //TODO optimize
+         return historyPoint.stats.tuplesEmittedPSMA; //TODO
+         });
+
+         chart.push({
+         key: 'Upper Value',
+         values: [
+         {timestamp: now - 30 * 1000, value: Math.round(max.value * 1.2)}
+         ]
+         });
+         */
+
+        if (this.history.length > 1) {
+          this.scope.data = _.clone(this.series);
+        }
+      }
+    });
+
+    return MetricsChartHistory;
   });
 /*
  * Copyright (c) 2014 DataTorrent, Inc. ALL Rights Reserved.
@@ -1743,8 +1838,10 @@ angular.module("ui.widgets").run(["$templateCache", function($templateCache) {
     "            showYAxis=\"true\"\n" +
     "            reduceXTicks=\"true\"\n" +
     "            transitionduration=\"0\"\n" +
-    "            showLegend=\"false\"\n" +
-    "            tooltips=\"false\">\n" +
+    "            showLegend=\"true\"\n" +
+    "            useInteractiveGuideline=\"true\"\n" +
+    "            nodata=\"Loading Data...\"\n" +
+    "            tooltips=\"true\">\n" +
     "    </nvd3-line-chart>\n" +
     "</div>"
   );
