@@ -1488,7 +1488,7 @@ angular.module('ui.widgets')
           var values = _.map(history, function (historyPoint) {
             return {
               timestamp: historyPoint.timestamp,
-              value: Math.round(parseInt(historyPoint.data[metricKey]))
+              value: Math.round(parseInt(historyPoint.data[metricKey], 10))
             };
           });
           console.log(values);
