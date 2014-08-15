@@ -62,6 +62,26 @@ angular.module('ui.widgets')
           //  console.log(newState);
           //});
         };
+
+        $scope.options = [
+          {
+            value: 30,
+            label: 'last 30 seconds'
+          },
+          {
+            value: 60,
+            label: 'last minute'
+          },
+          {
+            value: 120,
+            label: 'last two minutes'
+          },
+          {
+            value: 300,
+            label: 'last 5 minutes'
+          }
+        ];
+        $scope.timeFrame = $scope.options[0];
       },
       link: function postLink(scope) {
         scope.data = [];

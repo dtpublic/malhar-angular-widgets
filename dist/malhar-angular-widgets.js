@@ -1392,6 +1392,26 @@ angular.module('ui.widgets')
           //  console.log(newState);
           //});
         };
+
+        $scope.options = [
+          {
+            value: 30,
+            label: 'last 30 seconds'
+          },
+          {
+            value: 60,
+            label: 'last minute'
+          },
+          {
+            value: 120,
+            label: 'last two minutes'
+          },
+          {
+            value: 300,
+            label: 'last 5 minutes'
+          }
+        ];
+        $scope.timeFrame = $scope.options[0];
       },
       link: function postLink(scope) {
         scope.data = [];
@@ -1832,6 +1852,8 @@ angular.module("ui.widgets").run(["$templateCache", function($templateCache) {
     "<div class=\"bar-chart\">\n" +
     "    <div style=\"text-align: right;\" ng-if=\"start && end\">\n" +
     "        <span>{{start|date:'HH:mm:ss'}} - {{end|date:'HH:mm:ss'}}</span>&nbsp;\n" +
+    "        <select ng-model=\"timeFrame\" ng-options=\"opt.label for opt in options\"\n" +
+    "                class=\"form-control\" style=\"width: 200px; display: inline;\"></select>\n" +
     "    </div>\n" +
     "    <nvd3-line-chart\n" +
     "            data=\"data\"\n" +
