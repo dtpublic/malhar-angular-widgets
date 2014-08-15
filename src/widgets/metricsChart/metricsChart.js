@@ -189,7 +189,7 @@ angular.module('ui.widgets')
 
         if (history.length > 1) {
           this.scope.data = _.clone(this.series);
-          this.scope.start = _.first(history).timestamp;
+          this.scope.start = Math.min(startTime, _.first(history).timestamp);
           this.scope.end = _.last(history).timestamp;
         }
       },
