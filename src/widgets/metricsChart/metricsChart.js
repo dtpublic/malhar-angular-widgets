@@ -95,7 +95,6 @@ angular.module('ui.widgets')
         }
 
         $scope.timeFrameChanged = function (newTimeFrame) {
-          console.log(newTimeFrame);
           if (chartHistory) {
             chartHistory.updateChart(Date.now(), newTimeFrame.value);
           }
@@ -161,7 +160,6 @@ angular.module('ui.widgets')
               value: Math.round(parseInt(historyPoint.data[metricKey], 10))
             };
           });
-          console.log(values);
 
           this.series[index].values = values;
         }.bind(this));
