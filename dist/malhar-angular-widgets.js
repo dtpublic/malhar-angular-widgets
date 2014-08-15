@@ -1393,6 +1393,8 @@ angular.module('ui.widgets')
           //});
         };
 
+        $scope.maxTimeLimit = 300;
+
         $scope.options = [
           {
             value: 30,
@@ -1407,29 +1409,40 @@ angular.module('ui.widgets')
             label: 'last two minutes'
           },
           {
-            value: 300,
+            value: $scope.maxTimeLimit,
             label: 'last 5 minutes'
           }
         ];
         $scope.timeFrame = $scope.options[0];
-      },
-      link: function postLink(scope) {
-        scope.data = [];
 
-        if (scope.controller) {
-          var chartHistory = new MetricsChartHistory(scope, scope.metrics);
-          scope.controller.addPoint = function (point) {
+
+        var chartHistory = null;
+        if ($scope.controller) {
+          chartHistory = new MetricsChartHistory($scope, $scope.metrics, $scope.maxTimeLimit, $scope.timeFrame.value);
+          $scope.controller.addPoint = function (point) {
             chartHistory.addPoint(point);
           };
         }
+
+        $scope.timeFrameChanged = function (newTimeFrame) {
+          console.log(newTimeFrame);
+          if (chartHistory) {
+            chartHistory.updateChart(Date.now(), newTimeFrame.value);
+          }
+        };
+      },
+      link: function postLink(scope) {
+        scope.data = [];
       }
     };
   })
   .factory('MetricsChartHistory', function () {
-    function MetricsChartHistory(scope, metrics) {
+    function MetricsChartHistory(scope, metrics, maxTimeLimit, timeLimit) {
       this.scope = scope;
-      this.history = [];
       this.metrics = metrics;
+      this.maxTimeLimit = maxTimeLimit;
+      this.timeLimit = timeLimit;
+      this.history = [];
 
       this.series = [];
 
@@ -1443,13 +1456,11 @@ angular.module('ui.widgets')
     }
 
     angular.extend(MetricsChartHistory.prototype, {
-      addPoint: function (point) {
-        var timeLimit = 30 * 1000;
-        var now = Date.now();
-        var startTime = now - timeLimit;
+      updateHistory: function (now, point) {
+        var historyStartTime = now - this.maxTimeLimit * 1000;
 
         var ind = _.findIndex(this.history, function (historyPoint) {
-          return historyPoint.timestamp >= startTime;
+          return historyPoint.timestamp >= historyStartTime;
         });
         if (ind > 1) {
           this.history = _.rest(this.history, ind - 1);
@@ -1460,16 +1471,27 @@ angular.module('ui.widgets')
           data: point
         };
         this.history.push(historyPoint);
+      },
+
+      updateChart: function (now, timeLimit) {
+        this.timeLimit = timeLimit;
+
+        var startTime = now - 1000 * timeLimit;
+
+        var history = _.filter(this.history, function (historyPoint) { //TODO optimize
+          return historyPoint.timestamp >= startTime;
+        });
 
         _.each(this.metrics, function (metric, index) {
           var metricKey = metric.key;
 
-          var values = _.map(this.history, function (historyPoint) {
+          var values = _.map(history, function (historyPoint) {
             return {
               timestamp: historyPoint.timestamp,
               value: Math.round(parseInt(historyPoint.data[metricKey]))
             };
           });
+          console.log(values);
 
           this.series[index].values = values;
         }.bind(this));
@@ -1497,11 +1519,18 @@ angular.module('ui.widgets')
          });
          */
 
-        if (this.history.length > 1) {
+        if (history.length > 1) {
           this.scope.data = _.clone(this.series);
-          this.scope.start = _.first(this.history).timestamp;
-          this.scope.end = _.last(this.history).timestamp;
+          this.scope.start = _.first(history).timestamp;
+          this.scope.end = _.last(history).timestamp;
         }
+      },
+
+      addPoint: function (point) {
+        var now = Date.now();
+        this.updateHistory(now, point);
+
+        this.updateChart(now, this.timeLimit);
       }
     });
 
@@ -1853,6 +1882,7 @@ angular.module("ui.widgets").run(["$templateCache", function($templateCache) {
     "    <div style=\"text-align: right;\" ng-if=\"start && end\">\n" +
     "        <span>{{start|date:'HH:mm:ss'}} - {{end|date:'HH:mm:ss'}}</span>&nbsp;\n" +
     "        <select ng-model=\"timeFrame\" ng-options=\"opt.label for opt in options\"\n" +
+    "                ng-change=\"timeFrameChanged(timeFrame)\"\n" +
     "                class=\"form-control\" style=\"width: 200px; display: inline;\"></select>\n" +
     "    </div>\n" +
     "    <nvd3-line-chart\n" +
