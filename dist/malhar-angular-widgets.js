@@ -1479,6 +1479,8 @@ angular.module('ui.widgets')
 
         if (this.history.length > 1) {
           this.scope.data = _.clone(this.series);
+          this.scope.start = _.first(this.history).timestamp;
+          this.scope.end = _.last(this.history).timestamp;
         }
       }
     });
@@ -1828,6 +1830,9 @@ angular.module("ui.widgets").run(["$templateCache", function($templateCache) {
 
   $templateCache.put("template/widgets/metricsChart/metricsChart.html",
     "<div class=\"bar-chart\">\n" +
+    "    <div style=\"text-align: right;\" ng-if=\"start && end\">\n" +
+    "        <span>{{start|date:'HH:mm:ss'}} - {{end|date:'HH:mm:ss'}}</span>&nbsp;\n" +
+    "    </div>\n" +
     "    <nvd3-line-chart\n" +
     "            data=\"data\"\n" +
     "            xAxisTickFormat=\"xAxisTickFormatFunction()\"\n" +

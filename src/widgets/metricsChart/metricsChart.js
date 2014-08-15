@@ -149,6 +149,8 @@ angular.module('ui.widgets')
 
         if (this.history.length > 1) {
           this.scope.data = _.clone(this.series);
+          this.scope.start = _.first(this.history).timestamp;
+          this.scope.end = _.last(this.history).timestamp;
         }
       }
     });
