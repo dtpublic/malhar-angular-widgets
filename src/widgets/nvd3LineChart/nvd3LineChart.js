@@ -23,14 +23,27 @@ angular.module('ui.widgets')
       replace: true,
       templateUrl: 'template/widgets/nvd3LineChart/nvd3LineChart.html',
       scope: {
-        data: '=data'
+        data: '=data',
+        showLegend: '@'
       },
       controller: function ($scope) {
         var filter = $filter('date');
+        var numberFilter = $filter('number');
 
         $scope.xAxisTickFormatFunction = function () {
           return function (d) {
             return filter(d, 'HH:mm');
+          };
+        };
+
+        $scope.yAxisTickFormatFunction = function () {
+          return function (d) {
+            if (d > 999) {
+              var value = Math.round(d/1000);
+              return numberFilter(value) + 'k';
+            } else {
+              return numberFilter(d);
+            }
           };
         };
 
