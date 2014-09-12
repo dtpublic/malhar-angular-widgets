@@ -122,54 +122,56 @@ angular.module('ui.models')
   .factory('RandomBaseTimeSeriesDataModel', function (RandomBaseDataModel, $interval) {
     function RandomTimeSeriesDataModel(options) {
       this.upperBound = (options && options.upperBound) ? options.upperBound : 100;
-      this.rate = (options && options.rate) ? options.rate : Math.round(this.upperBound/2);
+      this.rate = (options && options.rate) ? options.rate : Math.round(this.upperBound / 2);
     }
 
     RandomTimeSeriesDataModel.prototype = Object.create(RandomBaseDataModel.prototype);
     RandomTimeSeriesDataModel.prototype.constructor = RandomBaseDataModel;
 
-    RandomTimeSeriesDataModel.prototype.init = function () {
-      RandomBaseDataModel.prototype.init.call(this);
+    angular.extend(RandomTimeSeriesDataModel.prototype, {
+      init: function () {
+        RandomBaseDataModel.prototype.init.call(this);
 
-      var max = 30;
-      var upperBound = this.upperBound;
-      var data = [];
-      var chartValue = Math.round(upperBound / 2);
-      var rate = this.rate;
+        var max = 30;
+        var upperBound = this.upperBound;
+        var data = [];
+        var chartValue = Math.round(upperBound / 2);
+        var rate = this.rate;
 
-      function nextValue() {
-        chartValue += Math.random() * rate - rate/2;
-        chartValue = chartValue < 0 ? 0 : chartValue > upperBound ? upperBound : chartValue;
-        return Math.round(chartValue);
-      }
-
-      var now = Date.now();
-      for (var i = max - 1; i >= 0; i--) {
-        data.push({
-          timestamp: now - i * 1000,
-          value: nextValue()
-        });
-      }
-
-      this.updateScope(data);
-
-      this.intervalPromise = $interval(function () {
-        if (data.length >= max) {
-          data.shift();
+        function nextValue() {
+          chartValue += Math.random() * rate - rate / 2;
+          chartValue = chartValue < 0 ? 0 : chartValue > upperBound ? upperBound : chartValue;
+          return Math.round(chartValue);
         }
-        data.push({
-          timestamp: Date.now(),
-          value: nextValue()
-        });
+
+        var now = Date.now();
+        for (var i = max - 1; i >= 0; i--) {
+          data.push({
+            timestamp: now - i * 1000,
+            value: nextValue()
+          });
+        }
 
         this.updateScope(data);
-      }.bind(this), 1000);
-    };
 
-    RandomTimeSeriesDataModel.prototype.destroy = function () {
-      RandomBaseDataModel.prototype.destroy.call(this);
-      $interval.cancel(this.intervalPromise);
-    };
+        this.intervalPromise = $interval(function () {
+          if (data.length >= max) {
+            data.shift();
+          }
+          data.push({
+            timestamp: Date.now(),
+            value: nextValue()
+          });
+
+          this.updateScope(data);
+        }.bind(this), 1000);
+      },
+
+      destroy: function () {
+        RandomBaseDataModel.prototype.destroy.call(this);
+        $interval.cancel(this.intervalPromise);
+      }
+    });
 
     return RandomTimeSeriesDataModel;
   })
@@ -212,7 +214,9 @@ angular.module('ui.models')
           },
           {
             key: 'Stream2',
-            values: _.map(data, function (item) { return { timestamp:item.timestamp, value: item.value + 10 }; })
+            values: _.map(data, function (item) {
+              return { timestamp: item.timestamp, value: item.value + 10 };
+            })
           }
         ];
 
@@ -624,9 +628,11 @@ angular.module('ui.websocket')
                 this.unsubscribe(topic, wrappedCallback);
               }));
 
+              return wrappedCallback;
             }
             else {
               callbacks.add(callback);
+              return callback;
             }
           },
 
@@ -1559,14 +1565,27 @@ angular.module('ui.widgets')
       replace: true,
       templateUrl: 'template/widgets/nvd3LineChart/nvd3LineChart.html',
       scope: {
-        data: '=data'
+        data: '=data',
+        showLegend: '@'
       },
       controller: function ($scope) {
         var filter = $filter('date');
+        var numberFilter = $filter('number');
 
         $scope.xAxisTickFormatFunction = function () {
           return function (d) {
             return filter(d, 'HH:mm');
+          };
+        };
+
+        $scope.yAxisTickFormatFunction = function () {
+          return function (d) {
+            if (d > 999) {
+              var value = Math.round(d/1000);
+              return numberFilter(value) + 'k';
+            } else {
+              return numberFilter(d);
+            }
           };
         };
 
@@ -1909,6 +1928,7 @@ angular.module("ui.widgets").run(["$templateCache", function($templateCache) {
     "    <nvd3-line-chart\n" +
     "            data=\"data\"\n" +
     "            xAxisTickFormat=\"xAxisTickFormatFunction()\"\n" +
+    "            yAxisTickFormat=\"yAxisTickFormatFunction()\"\n" +
     "            x=\"xFunction()\"\n" +
     "            y=\"yFunction()\"\n" +
     "            showXAxis=\"true\"\n" +
@@ -1916,7 +1936,9 @@ angular.module("ui.widgets").run(["$templateCache", function($templateCache) {
     "            reduceXTicks=\"true\"\n" +
     "            forcey=\"[0,100]\"\n" +
     "            transitionduration=\"0\"\n" +
-    "            tooltips=\"false\">\n" +
+    "            useInteractiveGuideline=\"true\"\n" +
+    "            showLegend=\"{{showLegend}}\"\n" +
+    "            tooltips=\"true\">\n" +
     "    </nvd3-line-chart>\n" +
     "</div>"
   );
