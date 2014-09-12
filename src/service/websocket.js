@@ -172,9 +172,11 @@ angular.module('ui.websocket')
                 this.unsubscribe(topic, wrappedCallback);
               }));
 
+              return wrappedCallback;
             }
             else {
               callbacks.add(callback);
+              return callback;
             }
           },
 
