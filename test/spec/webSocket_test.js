@@ -98,13 +98,6 @@ describe('Service: websocket', function () {
     expect(listener2.callCount).toEqual(2);
   });
 
-  it('should notify on WebSocket onopen', function () {
-    expect(webSocketObject.onopen).toBeDefined();
-    spyOn(notificationService, 'notify');
-    webSocketObject.onopen();
-    expect(notificationService.notify).toHaveBeenCalled();
-  });
-
   it('should notify on WebSocket onclose', function () {
     expect(webSocketObject.onclose).toBeDefined();
     spyOn(notificationService, 'notify');
