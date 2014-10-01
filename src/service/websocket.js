@@ -35,14 +35,15 @@ angular.module('ui.websocket')
 
         var deferred = $q.defer();
 
-        socket.onopen = function () {
+        var webSocketError = false;
+
+        var onopen = function () {
+          $log.info('WebSocket connection has been made. URL: ', webSocketURL);
           deferred.resolve();
           $rootScope.$apply();
         };
 
-        var webSocketError = false;
-
-        socket.onclose = function () {
+        var onclose = function() {
           if (!webSocketError) {
             notificationService.notify({
               title: 'WebSocket Closed',
@@ -56,7 +57,7 @@ angular.module('ui.websocket')
         };
 
         //TODO
-        socket.onerror = function () {
+        var onerror = function () {
           webSocketError = true;
           notificationService.notify({
             title: 'WebSocket Error',
@@ -67,6 +68,10 @@ angular.module('ui.websocket')
             history: false
           });
         };
+
+        socket.onopen = onopen;
+        socket.onclose = onclose;
+        socket.onerror = onerror;
 
         var topicMap = {}; // topic -> [callbacks] mapping
 
@@ -190,6 +195,21 @@ angular.module('ui.websocket')
                 
               }
             }
+          },
+
+          disconnect: function() {
+            socket.onclose = function() {
+              // SILENCE!
+            };
+            socket.close();
+          },
+
+          reconnect: function() {
+            socket = new $window.WebSocket(webSocketURL);
+            deferred = $q.defer();
+            socket.onopen = onopen;
+            socket.onclose = onclose;
+            socket.onerror = onerror;
           }
         };
       },
