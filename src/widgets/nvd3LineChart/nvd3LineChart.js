@@ -39,8 +39,16 @@ angular.module('ui.widgets')
         $scope.yAxisTickFormatFunction = function () {
           return function (d) {
             if (d > 999) {
-              var value = Math.round(d/1000);
-              return numberFilter(value) + 'k';
+              var value;
+              var scale;
+              if (d < 999999) {
+                value = Math.round(d/1000);
+                scale = 'k';
+              } else {
+                value = Math.round(d/1000000);
+                scale = 'm';
+              }
+              return numberFilter(value) + scale;
             } else {
               return numberFilter(d);
             }
