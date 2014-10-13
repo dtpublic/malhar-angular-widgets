@@ -1,6 +1,6 @@
 <div class="bar-chart">
     <div style="text-align: right;">
-        <span ng-if="start && end">{{start|date:'HH:mm:ss'}} - {{end|date:'HH:mm:ss'}}</span>&nbsp;
+        <span ng-if="showTimeRange && start && end">{{start|date:'HH:mm:ss'}} - {{end|date:'HH:mm:ss'}}</span>&nbsp;
     </div>
     <nvd3-line-chart
             data="data"
