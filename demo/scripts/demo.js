@@ -76,6 +76,9 @@ angular.module('app', [
         dataModelArgs: {
           rate: 40
         },
+        attrs: {
+          'show-time-range': true
+        },
         style: {
           width: '50%'
         }

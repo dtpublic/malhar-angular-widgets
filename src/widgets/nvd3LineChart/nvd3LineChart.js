@@ -24,7 +24,9 @@ angular.module('ui.widgets')
       templateUrl: 'template/widgets/nvd3LineChart/nvd3LineChart.html',
       scope: {
         data: '=data',
-        showLegend: '@'
+        showLegend: '@',
+        showTimeRange: '=?',
+        timeAxisFormat: '=?'
       },
       controller: function ($scope) {
         var filter = $filter('date');
@@ -32,7 +34,7 @@ angular.module('ui.widgets')
 
         $scope.xAxisTickFormatFunction = function () {
           return function (d) {
-            return filter(d, 'HH:mm');
+            return filter(d, $scope.timeAxisFormat);
           };
         };
 
@@ -66,7 +68,13 @@ angular.module('ui.widgets')
           };
         };
       },
-      link: function postLink(scope) {
+      link: function postLink(scope, element, attrs) {
+        if (!_.has(attrs, 'showTimeRange')) {
+          scope.showTimeRange = true;
+        }
+
+        scope.timeAxisFormat = scope.timeAxisFormat || 'HH:mm';
+
         scope.$watch('data', function (data) {
           if (data && data[0] && data[0].values && (data[0].values.length > 1)) {
             var timeseries = _.sortBy(data[0].values, function (item) {
