@@ -17,67 +17,76 @@
 'use strict';
 
 angular.module('ui.websocket')
-  .factory('visibly', function ($window) {
-    return $window.visibly;
+  .factory('Visibility', function ($window) {
+    return $window.Visibility;
   })
   .provider('webSocket', function () {
     var visibilityTimeout = 20000;
+    var maxConnectionAttempts = 5;
+    var connectionAttemptInterval = 2000;
     var webSocketURL;
-    var webSocketObject; // for testing only
+    var explicitConnect;
+    var closeRequested;
 
     return {
       $get: function ($q, $rootScope, $timeout, notificationService, Visibility, $log, $window) {
-        if (!webSocketURL && !webSocketObject) {
-          throw 'WebSocket URL is not defined';
-        }
 
-        var socket = !webSocketObject ? new $window.WebSocket(webSocketURL) : webSocketObject;
+        var socket;
+
+        var webSocketService;
 
         var deferred = $q.defer();
 
         var webSocketError = false;
 
+        var connectionAttempts = 0;
+
         var onopen = function () {
           $log.info('WebSocket connection has been made. URL: ', webSocketURL);
+          connectionAttempts = 0;
           deferred.resolve();
           $rootScope.$apply();
         };
 
         var onclose = function() {
-          if (!webSocketError) {
-            notificationService.notify({
-              title: 'WebSocket Closed',
-              text: 'WebSocket connection has been closed. Try refreshing the page.',
-              type: 'error',
-              icon: false,
-              hide: false,
-              history: false
-            });
+          // Reset the deferred
+          deferred = $q.defer();
+
+          // Check if this close was requested
+          if (!closeRequested) {
+             
+            // Check connectionAttempts count
+            if (connectionAttempts < maxConnectionAttempts) {
+              // Try to re-establish connection
+              var url = this.url;
+              connectionAttempts++;
+              $timeout(function() {
+                $log.info('Attempting to reconnect to websocket');
+                webSocketService.connect(url);
+              }, connectionAttemptInterval);
+            }
+
+            else {
+              $log.error('Could not re-establish the WebSocket connection.');
+            }
+
+          }
+
+          // Otherwise reset some flags
+          else {
+            connectionAttempts = 0;
+            closeRequested = false;
           }
         };
 
-        //TODO
+        // TODO: listeners for error and close, exposed on
+        // service itself
         var onerror = function () {
           webSocketError = true;
-          notificationService.notify({
-            title: 'WebSocket Error',
-            text: 'WebSocket error. Try refreshing the page.',
-            type: 'error',
-            icon: false,
-            hide: false,
-            history: false
-          });
+          $log.error('WebSocket encountered an error');
         };
 
-        socket.onopen = onopen;
-        socket.onclose = onclose;
-        socket.onerror = onerror;
-
-        var topicMap = {}; // topic -> [callbacks] mapping
-
-        var stopUpdates = false;
-
-        socket.onmessage = function (event) {
+        var onmessage = function (event) {
           if (stopUpdates) { // stop updates if page is inactive
             return;
           }
@@ -102,6 +111,10 @@ angular.module('ui.websocket')
           }
         };
 
+        var topicMap = {}; // topic -> [callbacks] mapping
+
+        var stopUpdates = false;
+
         if (Visibility.isSupported()) {
           var timeoutPromise;
 
@@ -123,7 +136,7 @@ angular.module('ui.websocket')
           }.bind(this));
         }
 
-        return {
+        webSocketService = {
           send: function (message) {
             var msg = JSON.stringify(message);
 
@@ -198,20 +211,33 @@ angular.module('ui.websocket')
           },
 
           disconnect: function() {
-            socket.onclose = function() {
-              // SILENCE!
-            };
+            closeRequested = true;
             socket.close();
           },
 
-          reconnect: function() {
-            socket = new $window.WebSocket(webSocketURL);
-            deferred = $q.defer();
+          connect: function(url) {
+            if (!url) {
+              if (webSocketURL) {
+                url = webSocketURL;
+              }
+              else {
+                throw new TypeError('No WebSocket connection URL specified in connect method');
+              }
+            }
+            socket = new $window.WebSocket(url);
+            // deferred = $q.defer();
             socket.onopen = onopen;
             socket.onclose = onclose;
             socket.onerror = onerror;
+            socket.onmessage = onmessage;
           }
         };
+
+        if (!explicitConnect) {
+          webSocketService.connect();
+        }
+
+        return webSocketService;
       },
 
       setVisibilityTimeout: function (timeout) {
@@ -222,8 +248,16 @@ angular.module('ui.websocket')
         webSocketURL = wsURL;
       },
 
-      setWebSocketObject: function (wsObject) {
-        webSocketObject = wsObject;
+      setExplicitConnection: function(flag) {
+        explicitConnect = flag;
+      },
+
+      setMaxConnectionAttempts: function(max) {
+        maxConnectionAttempts = max;
+      },
+
+      setConnectionAttemptInterval: function(interval) {
+        maxConnectionAttempts = interval;
       }
     };
   });
