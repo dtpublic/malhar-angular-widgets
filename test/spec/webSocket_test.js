@@ -15,138 +15,464 @@
  */
 'use strict';
 
-describe('Service: websocket', function () {
+describe('Service: webSocket', function () {
 
-  var webSocket, webSocketObject, notificationService, $rootScope;
+  var webSocket, webSocketObject, notificationService, $rootScope, $timeout, WebSocket, Visibility, visibilityIsSupported, $window, wsUrl;
 
-  beforeEach(module('ui.websocket', function(webSocketProvider) {
-    webSocketObject = {
-      send: jasmine.createSpy()
-    };
+  describe('when explicitConnection is disabled', function() {
 
-    webSocketProvider.setWebSocketObject(webSocketObject);
-  }));
+    describe('when url is provided by calling provider.setWebSocketURL', function() {
 
-  beforeEach(inject(function (_webSocket_, _notificationService_, _$rootScope_) {
-    webSocket = _webSocket_;
-    notificationService = _notificationService_;
-    $rootScope = _$rootScope_;
-  }));
+      beforeEach(module('ui.websocket', function($provide, webSocketProvider) {
 
-  it('should send message when WebSocket connection is opened', inject(function () {
-    expect(webSocketObject.onopen).toBeDefined();
+        WebSocket = function(url, protocol) {
+          webSocketObject = this;
+          wsUrl = url;
+        };
 
-    webSocket.send({});
+        Visibility = {
+          change: jasmine.createSpy(),
+          isSupported: function() {
+            return visibilityIsSupported;
+          }
+        };
 
-    expect(webSocketObject.send).not.toHaveBeenCalled(); // no connection yet
+        visibilityIsSupported = true;
+        
+        $provide.value('$window', $window = {
+          Visibility: Visibility,
+          WebSocket: WebSocket
+        });
 
-    webSocketObject.onopen();
+        spyOn($window, 'WebSocket').andCallThrough();
 
-    expect(webSocketObject.send).toHaveBeenCalled();
-  }));
+        webSocketProvider.setWebSocketURL('ws://testing.com');
 
-  it('should notify subscribers', function () {
-    expect(webSocketObject.onmessage).toBeDefined();
+      }));
 
-    var listener1 = jasmine.createSpy();
-    var listener2 = jasmine.createSpy();
+      beforeEach(inject(function (_webSocket_, _notificationService_, _$rootScope_) {
+        webSocket = _webSocket_;
+        notificationService = _notificationService_;
+        $rootScope = _$rootScope_;
+      }));
+      
+      it('should instantiate a WebSocket immediately with the url set with provider.setWebSocketURL', function() {
+        expect($window.WebSocket).toHaveBeenCalledWith('ws://testing.com');
+      });
 
-    webSocket.subscribe('test', listener1);
-    webSocket.subscribe('test', listener2);
+    });
 
-    var message1 = { topic: 'test', data: { value: 100 } };
-    webSocketObject.onmessage({ data: JSON.stringify(message1) });
+    describe('when the url is not provided by calling provider.setWebSocketURL', function() {
 
-    expect(listener1).toHaveBeenCalledWith({ value: 100 });
-    expect(listener2).toHaveBeenCalledWith({ value: 100 });
+      beforeEach(module('ui.websocket', function($provide, webSocketProvider) {
 
-    var message2 = { topic: 'test', data: { value: 50 } };
-    webSocketObject.onmessage({ data: JSON.stringify(message2) });
+        WebSocket = function(url, protocol) {
+          webSocketObject = this;
+          wsUrl = url;
+        };
 
-    expect(listener1).toHaveBeenCalledWith({ value: 50 });
-    expect(listener2).toHaveBeenCalledWith({ value: 50 });
-  });
+        Visibility = {
+          change: jasmine.createSpy(),
+          isSupported: function() {
+            return visibilityIsSupported;
+          }
+        };
 
-  it('should send a subscribe message', function() {
-    var listener1 = jasmine.createSpy();
-    spyOn(webSocket, 'send');
-    webSocket.subscribe('testing', listener1);
-    expect(webSocket.send).toHaveBeenCalledWith({ type: 'subscribe', topic: 'testing' });
-  });
+        visibilityIsSupported = true;
+        
+        $provide.value('$window', $window = {
+          Visibility: Visibility,
+          WebSocket: WebSocket
+        });
 
-  it('should unsubscribe', function () {
-    expect(webSocketObject.onmessage).toBeDefined();
+        spyOn($window, 'WebSocket').andCallThrough();
 
-    var listener1 = jasmine.createSpy();
-    var listener2 = jasmine.createSpy();
+      }));
+      
+      it('should throw if a URL was not set with provider.setWebSocketURL', function() {
+        expect(function() {
+          inject(function(webSocket) {
+            // should not get here
+          });
+        }).toThrow();
+      });
 
-    webSocket.subscribe('test', listener1);
-    webSocket.subscribe('test', listener2);
-
-    var message = { topic: 'test', data: {} };
-    var event = { data: JSON.stringify(message) };
-    webSocketObject.onmessage(event);
-
-    expect(listener1).toHaveBeenCalled();
-    expect(listener2).toHaveBeenCalled();
-
-    webSocket.unsubscribe('test', listener1);
-
-    webSocketObject.onmessage(event);
-
-    expect(listener1.callCount).toEqual(1);
-    expect(listener2.callCount).toEqual(2);
-  });
-
-  it('should notify on WebSocket onclose', function () {
-    expect(webSocketObject.onclose).toBeDefined();
-    spyOn(notificationService, 'notify');
-    webSocketObject.onclose();
-    expect(notificationService.notify).toHaveBeenCalled();
-  });
-
-  it('should notify on WebSocket onerror', function () {
-    expect(webSocketObject.onerror).toBeDefined();
-    spyOn(notificationService, 'notify');
-    webSocketObject.onerror();
-    expect(notificationService.notify).toHaveBeenCalled();
-  });
-
-  it('should call unsubscribe on scope destroy', function () {
-    var listener = jasmine.createSpy();
-    var scope = $rootScope.$new();
-
-    spyOn(webSocket, 'unsubscribe');
-
-    webSocket.subscribe('test', listener, scope);
-
-    expect(webSocket.unsubscribe).not.toHaveBeenCalled();
-
-    scope.$destroy();
-
-    expect(webSocket.unsubscribe).toHaveBeenCalled();
+    });
 
   });
 
-  it('should send an unsubscribe message when there are no more listeners for a given topic', function() {
+  describe('when explicitConnection is enabled', function() {
     
-    var listener1 = jasmine.createSpy();
-    spyOn(webSocket, 'send');
-    webSocket.subscribe('testing', listener1);
-    expect(webSocket.send).toHaveBeenCalledWith({ type: 'subscribe', topic: 'testing' });
-    webSocket.unsubscribe('testing', listener1);
-    expect(webSocket.send).toHaveBeenCalledWith({ type: 'unsubscribe', topic: 'testing' });
+    describe('when url is provided by calling provider.setWebSocketURL', function() {
+      
+      beforeEach(module('ui.websocket', function($provide, webSocketProvider) {
+
+        WebSocket = function(url, protocol) {
+          webSocketObject = this;
+          wsUrl = url;
+        };
+
+        Visibility = {
+          change: jasmine.createSpy(),
+          isSupported: function() {
+            return visibilityIsSupported;
+          }
+        };
+
+        visibilityIsSupported = true;
+        
+        $provide.value('$window', $window = {
+          Visibility: Visibility,
+          WebSocket: WebSocket
+        });
+
+        spyOn($window, 'WebSocket').andCallThrough();
+
+        webSocketProvider.setExplicitConnection(true);
+
+        webSocketProvider.setWebSocketURL('ws://testing.com');
+
+      }));
+
+      beforeEach(inject(function (_webSocket_, _notificationService_, _$rootScope_) {
+        webSocket = _webSocket_;
+        notificationService = _notificationService_;
+        $rootScope = _$rootScope_;
+      }));
+
+      it('should not call WebSocket immediately', function() {
+        expect($window.WebSocket).not.toHaveBeenCalled();
+      });
+
+      it('should instantiate a WebSocket with the url set with provider.setWebSocketURL if no url arg is passed to it', function() {
+        webSocket.connect();
+        expect($window.WebSocket).toHaveBeenCalledWith('ws://testing.com');
+      });
+
+    });
+
+    describe('when the url is not provided by calling provider.setWebSocketURL', function() {
+      
+      beforeEach(module('ui.websocket', function($provide, webSocketProvider) {
+
+        WebSocket = function(url, protocol) {
+          webSocketObject = this;
+          wsUrl = url;
+        };
+
+        Visibility = {
+          change: jasmine.createSpy(),
+          isSupported: function() {
+            return visibilityIsSupported;
+          }
+        };
+
+        visibilityIsSupported = true;
+        
+        $provide.value('$window', $window = {
+          Visibility: Visibility,
+          WebSocket: WebSocket
+        });
+
+        spyOn($window, 'WebSocket').andCallThrough();
+
+        webSocketProvider.setExplicitConnection(true);
+
+      }));
+
+      beforeEach(inject(function (_webSocket_, _notificationService_, _$rootScope_) {
+        webSocket = _webSocket_;
+        notificationService = _notificationService_;
+        $rootScope = _$rootScope_;
+      }));
+
+      it('should not call WebSocket immediately', function() {
+        expect($window.WebSocket).not.toHaveBeenCalled();
+      });
+
+      it('should instantiate a WebSocket with the provided url', function() {
+        webSocket.connect('ws://my-other-url.com');
+        expect($window.WebSocket).toHaveBeenCalledWith('ws://my-other-url.com');
+      });
+
+      it('should throw if no url is passed and no url was set with provider.setWebSocketURL', function() {
+        expect(function() {
+          webSocket.connect();
+        }).toThrow();
+      });
+
+    });
+
   });
 
-  it('should send a subscribe message again if a topic has previously been unsubscribed to', function() {
-    var listener1 = jasmine.createSpy();
-    spyOn(webSocket, 'send');
-    webSocket.subscribe('testing', listener1);
-    expect(webSocket.send).toHaveBeenCalledWith({ type: 'subscribe', topic: 'testing' });
-    webSocket.unsubscribe('testing', listener1);
-    expect(webSocket.send).toHaveBeenCalledWith({ type: 'unsubscribe', topic: 'testing' });
-    webSocket.subscribe('testing', listener1);
-    expect(webSocket.send.calls[2].args[0]).toEqual({ type: 'subscribe', topic: 'testing' });
+  describe('the send method', function() {
+    
+    var wsUrl;
+
+    beforeEach(module('ui.websocket', function($provide, webSocketProvider) {
+
+      WebSocket = function(url, protocol) {
+        webSocketObject = this;
+        wsUrl = url;
+        this.send = jasmine.createSpy();
+      };
+
+      Visibility = {
+        change: jasmine.createSpy(),
+        isSupported: function() {
+          return visibilityIsSupported;
+        }
+      };
+
+      visibilityIsSupported = true;
+      
+      $provide.value('$window', $window = {
+        Visibility: Visibility,
+        WebSocket: WebSocket
+      });
+
+      spyOn($window, 'WebSocket').andCallThrough();
+
+      webSocketProvider.setWebSocketURL('ws://testing.com');
+
+    }));
+
+    beforeEach(inject(function (_webSocket_, _notificationService_, _$rootScope_) {
+      webSocket = _webSocket_;
+      notificationService = _notificationService_;
+      $rootScope = _$rootScope_;
+    }));
+
+    it('should send message when WebSocket connection is opened', inject(function () {
+      expect(webSocketObject.onopen).toBeDefined();
+
+      webSocket.send({});
+
+      expect(webSocketObject.send).not.toHaveBeenCalled(); // no connection yet
+
+      webSocketObject.onopen();
+
+      expect(webSocketObject.send).toHaveBeenCalled();
+    }));
+
+    it('should notify subscribers', function () {
+      expect(webSocketObject.onmessage).toBeDefined();
+
+      var listener1 = jasmine.createSpy();
+      var listener2 = jasmine.createSpy();
+
+      webSocket.subscribe('test', listener1);
+      webSocket.subscribe('test', listener2);
+
+      var message1 = { topic: 'test', data: { value: 100 } };
+      webSocketObject.onmessage({ data: JSON.stringify(message1) });
+
+      expect(listener1).toHaveBeenCalledWith({ value: 100 });
+      expect(listener2).toHaveBeenCalledWith({ value: 100 });
+
+      var message2 = { topic: 'test', data: { value: 50 } };
+      webSocketObject.onmessage({ data: JSON.stringify(message2) });
+
+      expect(listener1).toHaveBeenCalledWith({ value: 50 });
+      expect(listener2).toHaveBeenCalledWith({ value: 50 });
+    });
+
+    it('should send a subscribe message', function() {
+      var listener1 = jasmine.createSpy();
+      spyOn(webSocket, 'send');
+      webSocket.subscribe('testing', listener1);
+      expect(webSocket.send).toHaveBeenCalledWith({ type: 'subscribe', topic: 'testing' });
+    });
+
+    it('should unsubscribe', function () {
+      expect(webSocketObject.onmessage).toBeDefined();
+
+      var listener1 = jasmine.createSpy();
+      var listener2 = jasmine.createSpy();
+
+      webSocket.subscribe('test', listener1);
+      webSocket.subscribe('test', listener2);
+
+      var message = { topic: 'test', data: {} };
+      var event = { data: JSON.stringify(message) };
+      webSocketObject.onmessage(event);
+
+      expect(listener1).toHaveBeenCalled();
+      expect(listener2).toHaveBeenCalled();
+
+      webSocket.unsubscribe('test', listener1);
+
+      webSocketObject.onmessage(event);
+
+      expect(listener1.callCount).toEqual(1);
+      expect(listener2.callCount).toEqual(2);
+    });
+
+    it('should call unsubscribe on scope destroy', function () {
+      var listener = jasmine.createSpy();
+      var scope = $rootScope.$new();
+
+      spyOn(webSocket, 'unsubscribe');
+
+      webSocket.subscribe('test', listener, scope);
+
+      expect(webSocket.unsubscribe).not.toHaveBeenCalled();
+
+      scope.$destroy();
+
+      expect(webSocket.unsubscribe).toHaveBeenCalled();
+
+    });
+
+    it('should send an unsubscribe message when there are no more listeners for a given topic', function() {
+      
+      var listener1 = jasmine.createSpy();
+      spyOn(webSocket, 'send');
+      webSocket.subscribe('testing', listener1);
+      expect(webSocket.send).toHaveBeenCalledWith({ type: 'subscribe', topic: 'testing' });
+      webSocket.unsubscribe('testing', listener1);
+      expect(webSocket.send).toHaveBeenCalledWith({ type: 'unsubscribe', topic: 'testing' });
+    });
+
+    it('should send a subscribe message again if a topic has previously been unsubscribed to', function() {
+      var listener1 = jasmine.createSpy();
+      spyOn(webSocket, 'send');
+      webSocket.subscribe('testing', listener1);
+      expect(webSocket.send).toHaveBeenCalledWith({ type: 'subscribe', topic: 'testing' });
+      webSocket.unsubscribe('testing', listener1);
+      expect(webSocket.send).toHaveBeenCalledWith({ type: 'unsubscribe', topic: 'testing' });
+      webSocket.subscribe('testing', listener1);
+      expect(webSocket.send.calls[2].args[0]).toEqual({ type: 'subscribe', topic: 'testing' });
+    });
+
+  });
+
+  describe('the disconnect method', function() {
+    
+    beforeEach(module('ui.websocket', function($provide, webSocketProvider) {
+
+      WebSocket = function(url, protocol) {
+        webSocketObject = this;
+        wsUrl = url;
+        this.send = jasmine.createSpy();
+        this.close = function() {
+          this.onclose();
+        };
+      };
+
+      Visibility = {
+        change: jasmine.createSpy(),
+        isSupported: function() {
+          return visibilityIsSupported;
+        }
+      };
+
+      visibilityIsSupported = true;
+      
+      $provide.value('$window', $window = {
+        Visibility: Visibility,
+        WebSocket: WebSocket
+      });
+
+      spyOn($window, 'WebSocket').andCallThrough();
+
+      webSocketProvider.setWebSocketURL('ws://testing.com');
+
+    }));
+
+    beforeEach(inject(function (_webSocket_, _notificationService_, _$rootScope_, _$timeout_) {
+      webSocket = _webSocket_;
+      notificationService = _notificationService_;
+      $rootScope = _$rootScope_;
+      $timeout = _$timeout_;
+
+      webSocketObject.onopen();
+
+      spyOn(webSocketObject, 'close').andCallThrough();
+      spyOn(webSocket, 'connect');
+    }));
+
+    it('should call the close method of the WebSocket', function() {
+      webSocket.disconnect();
+      expect(webSocketObject.close).toHaveBeenCalled();
+    });
+
+    it('should not try to re-establish connection after connectionAttemptInterval', function() {
+      webSocket.disconnect();
+      $timeout.verifyNoPendingTasks();
+    });
+
+  });
+
+  describe('when the connection gets unexpectedly closed', function() {
+
+    beforeEach(module('ui.websocket', function($provide, webSocketProvider) {
+
+      WebSocket = function(url, protocol) {
+        webSocketObject = this;
+        wsUrl = url;
+        this.send = jasmine.createSpy();
+        this.close = function() {
+          this.onclose();
+        };
+      };
+
+      Visibility = {
+        change: jasmine.createSpy(),
+        isSupported: function() {
+          return visibilityIsSupported;
+        }
+      };
+
+      visibilityIsSupported = true;
+      
+      $provide.value('$window', $window = {
+        Visibility: Visibility,
+        WebSocket: WebSocket
+      });
+
+      spyOn($window, 'WebSocket').andCallThrough();
+
+      webSocketProvider.setWebSocketURL('ws://testing.com');
+      webSocketProvider.setConnectionAttemptInterval(1000);
+      webSocketProvider.setMaxConnectionAttempts(3);
+
+    }));
+
+    beforeEach(inject(function (_webSocket_, _notificationService_, _$rootScope_, _$timeout_) {
+      webSocket = _webSocket_;
+      notificationService = _notificationService_;
+      $rootScope = _$rootScope_;
+      $timeout = _$timeout_;
+
+      webSocketObject.onopen();
+
+      spyOn(webSocketObject, 'close').andCallThrough();
+      spyOn(webSocket, 'connect').andCallThrough();
+    }));
+    
+    it('should try to re-establish connection', function() {
+      webSocketObject.onclose();
+      $timeout.flush();
+      expect(webSocket.connect).toHaveBeenCalled();
+    });
+
+    it('should try maxConnectionAttempts times', function() {
+      webSocketObject.onclose();
+      $timeout.flush();
+      webSocketObject.onclose();
+      $timeout.flush();
+      webSocketObject.onclose();
+      $timeout.flush();
+      webSocketObject.onclose();
+      $timeout.verifyNoPendingTasks();
+      expect(webSocket.connect.calls.length).toEqual(3);
+    });
+
+    it('should start queuing up send messages again, then send those messages once connection has been re-established', function() {
+      
+    });
+
   });
 
 });
