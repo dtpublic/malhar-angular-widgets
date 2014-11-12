@@ -118,7 +118,7 @@ angular.module('ui.websocket')
         if (Visibility.isSupported()) {
           var timeoutPromise;
 
-          Visibility.change(function (e, state) {
+          Visibility.change(angular.bind(this, function (e, state) {
             if (state === 'hidden') {
               timeoutPromise = $timeout(function () {
                 stopUpdates = true;
@@ -133,7 +133,7 @@ angular.module('ui.websocket')
 
               $log.debug('visible');
             }
-          }.bind(this));
+          }));
         }
 
         webSocketService = {
