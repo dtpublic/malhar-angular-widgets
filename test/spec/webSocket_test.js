@@ -347,6 +347,65 @@ describe('Service: webSocket', function () {
 
   });
 
+  describe('the connect method', function() {
+    
+    beforeEach(module('ui.websocket', function($provide, webSocketProvider) {
+      WebSocket = function(url, protocol) {
+        webSocketObject = this;
+        wsUrl = url;
+        this.send = jasmine.createSpy();
+        this.close = function() {
+          this.onclose();
+        };
+      };
+      WebSocket.OPEN = 1;
+
+      Visibility = {
+        change: jasmine.createSpy(),
+        isSupported: function() {
+          return visibilityIsSupported;
+        }
+      };
+
+      visibilityIsSupported = true;
+      
+      $provide.value('$window', $window = {
+        Visibility: Visibility,
+        WebSocket: WebSocket
+      });
+      webSocketProvider.setExplicitConnection(true);
+      webSocketProvider.setWebSocketURL('ws://testing.com');
+
+    }));
+
+    beforeEach(inject(function (_webSocket_, _notificationService_, _$rootScope_, _$timeout_) {
+      webSocket = _webSocket_;
+      notificationService = _notificationService_;
+      $rootScope = _$rootScope_;
+      $timeout = _$timeout_;
+      webSocket.connect();
+
+      webSocketObject.onopen();
+
+      spyOn(webSocketObject, 'close').andCallThrough();
+      // spyOn(webSocket, 'connect').andCallThrough();
+    }));
+
+    it('should not throw', function() {
+      expect(function() {
+        webSocket.connect();
+      }).not.toThrow();
+    });
+
+    it('should do nothing if an open WebSocket instance is already there', function() {
+      var initObj = webSocketObject;
+      initObj.readyState = WebSocket.OPEN;
+      webSocket.connect();
+      expect(initObj === webSocketObject).toEqual(true);
+    });
+
+  });
+
   describe('the disconnect method', function() {
     
     beforeEach(module('ui.websocket', function($provide, webSocketProvider) {
