@@ -224,6 +224,12 @@ angular.module('ui.websocket')
                 throw new TypeError('No WebSocket connection URL specified in connect method');
               }
             }
+
+            if (socket && socket.readyState === $window.WebSocket.OPEN) {
+              $log.info('webSocket.connect called, but webSocket connection already established.');
+              return;
+            }
+
             socket = new $window.WebSocket(url);
             // deferred = $q.defer();
             socket.onopen = onopen;
