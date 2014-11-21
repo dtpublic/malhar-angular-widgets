@@ -667,6 +667,9 @@ angular.module('ui.websocket')
           },
 
           disconnect: function() {
+            if (!socket) {
+              return;
+            }
             closeRequested = true;
             socket.close();
           },
