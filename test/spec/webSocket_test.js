@@ -375,31 +375,54 @@ describe('Service: webSocket', function () {
       });
 
       spyOn($window, 'WebSocket').andCallThrough();
-
+      webSocketProvider.setExplicitConnection(true);
       webSocketProvider.setWebSocketURL('ws://testing.com');
 
     }));
 
-    beforeEach(inject(function (_webSocket_, _notificationService_, _$rootScope_, _$timeout_) {
-      webSocket = _webSocket_;
-      notificationService = _notificationService_;
-      $rootScope = _$rootScope_;
-      $timeout = _$timeout_;
+    describe('when the webSocket has been connected', function() {
 
-      webSocketObject.onopen();
+      beforeEach(inject(function (_webSocket_, _notificationService_, _$rootScope_, _$timeout_) {
+        webSocket = _webSocket_;
+        notificationService = _notificationService_;
+        $rootScope = _$rootScope_;
+        $timeout = _$timeout_;
+        webSocket.connect();
 
-      spyOn(webSocketObject, 'close').andCallThrough();
-      spyOn(webSocket, 'connect');
-    }));
+        webSocketObject.onopen();
 
-    it('should call the close method of the WebSocket', function() {
-      webSocket.disconnect();
-      expect(webSocketObject.close).toHaveBeenCalled();
+        spyOn(webSocketObject, 'close').andCallThrough();
+        spyOn(webSocket, 'connect');
+      }));
+
+      it('should call the close method of the WebSocket', function() {
+        webSocket.disconnect();
+        expect(webSocketObject.close).toHaveBeenCalled();
+      });
+
+      it('should not try to re-establish connection after connectionAttemptInterval', function() {
+        webSocket.disconnect();
+        $timeout.verifyNoPendingTasks();
+      });
+
     });
 
-    it('should not try to re-establish connection after connectionAttemptInterval', function() {
-      webSocket.disconnect();
-      $timeout.verifyNoPendingTasks();
+    describe('when the webSocket has not connected', function() {
+      
+      beforeEach(inject(function (_webSocket_, _notificationService_, _$rootScope_, _$timeout_) {
+        webSocket = _webSocket_;
+        notificationService = _notificationService_;
+        $rootScope = _$rootScope_;
+        $timeout = _$timeout_;
+        spyOn(webSocket, 'connect');
+      }));
+
+      it('should not throw', function() {
+        expect(function() {
+          webSocket.disconnect();
+        }).not.toThrow();
+      });
+
     });
 
   });
