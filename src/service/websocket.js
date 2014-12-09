@@ -68,6 +68,13 @@ angular.module('ui.websocket')
 
             else {
               $log.error('Could not re-establish the WebSocket connection.');
+              notificationService.notify({
+                type: 'error',
+                title: 'Could not re-establish WebSocket Connection',
+                text: 'The dashboard lost contact with your DataTorrent Gateway for over ' +
+                      Math.round((maxConnectionAttempts * connectionAttemptInterval)/1000) +
+                      ' seconds. Double-check your connection and try refreshing the page.'
+              });
             }
 
           }
@@ -114,6 +121,7 @@ angular.module('ui.websocket')
         var topicMap = {}; // topic -> [callbacks] mapping
 
         var stopUpdates = false;
+
 
         if (Visibility.isSupported()) {
           var timeoutPromise;
@@ -239,6 +247,15 @@ angular.module('ui.websocket')
             socket.onclose = onclose;
             socket.onerror = onerror;
             socket.onmessage = onmessage;
+
+            // resubscribe to topics
+            // send the subscribe message
+            for (var topic in topicMap) {
+              if (topicMap.hasOwnProperty(topic)) {
+                var message = { type: 'subscribe', topic: topic };
+                this.send(message);
+              }
+            }
           }
         };
 
