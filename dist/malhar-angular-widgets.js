@@ -528,7 +528,7 @@ angular.module('ui.websocket')
                 type: 'error',
                 title: 'Could not re-establish WebSocket Connection',
                 text: 'The dashboard lost contact with your DataTorrent Gateway for over ' +
-                      ((maxConnectionAttempts * connectionAttemptInterval)/1000) +
+                      Math.round((maxConnectionAttempts * connectionAttemptInterval)/1000) +
                       ' seconds. Double-check your connection and try refreshing the page.'
               });
             }
