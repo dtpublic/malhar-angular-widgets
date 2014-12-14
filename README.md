@@ -3,7 +3,7 @@ angular-widgets
 
 [![Build Status](https://travis-ci.org/DataTorrent/malhar-angular-widgets.svg?branch=master)](https://travis-ci.org/DataTorrent/malhar-angular-widgets)
 
- Widget Library (Line Chart, Bar Chart, Top N and more).
+ Widget (Line Chart, Bar Chart, Top N and more).
 
  [Online Demo](http://datatorrent.github.io/malhar-dashboard-webapp/#/) using the library [[source code](https://github.com/DataTorrent/malhar-dashboard-webapp)]
 

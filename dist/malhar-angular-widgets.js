@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-angular.module('ui.widgets', ['ngGrid', 'nvd3ChartDirectives']);
+angular.module('ui.widgets', ['datatorrent.mlhrTable', 'nvd3ChartDirectives']);
 angular.module('ui.websocket', ['ui.visibility', 'ui.notify']);
 angular.module('ui.models', ['ui.visibility', 'ui.websocket']);
 
@@ -1926,22 +1926,20 @@ angular.module('ui.widgets')
         data: '='
       },
       controller: function ($scope) {
-        $scope.gridOptions = {
-          data: 'items',
-          enableRowSelection: false,
-          enableColumnResize: false,
-          columnDefs: [
-            { field: 'name', displayName: 'Name' },
-            { field: 'value', displayName: 'Value' }
+        $scope.tableOptions = {
+          initialSorts: [
+            { id: 'value', dir: '-' }
           ]
         };
+        $scope.columns = [
+          { id: 'name', key: 'name', label: 'Name' },
+          { id: 'value', key: 'value', label: 'Value', sort: 'number' }
+        ];
       },
       link: function postLink(scope) {
         scope.$watch('data', function (data) {
           if (data) {
-            scope.items = _.sortBy(data, function (item) {
-              return (-item.value);
-            });
+            scope.items = data;
           }
         });
       }
@@ -2081,7 +2079,11 @@ angular.module("ui.widgets").run(["$templateCache", function($templateCache) {
 
   $templateCache.put("template/widgets/topN/topN.html",
     "<div class=\"top-n\">\n" +
-    "    <div ng-grid=\"gridOptions\" class=\"grid\"></div>\n" +
+    "    <mlhr-table \n" +
+    "      options=\"tableOptions\"\n" +
+    "      columns=\"columns\" \n" +
+    "      rows=\"items\">\n" +
+    "    </mlhr-table>\n" +
     "</div>"
   );
 

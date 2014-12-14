@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+'use strict';
+
 describe('main test', function () {
   var $compile, $rootScope;
 
@@ -21,10 +23,11 @@ describe('main test', function () {
   beforeEach(inject(function(_$compile_, _$rootScope_) {
     $compile = _$compile_;
     $rootScope = _$rootScope_;
+    $rootScope.myData = [];
   }));
 
   it('should have topN directive', function() {
-    var element = angular.element('<div wt-top-n=""></div>');
+    var element = angular.element('<div wt-top-n data="myData"></div>');
     $compile(element)($rootScope);
     $rootScope.$digest();
     expect(element.hasClass('top-n')).toBe(true);

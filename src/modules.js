@@ -14,6 +14,6 @@
  * limitations under the License.
  */
 
-angular.module('ui.widgets', ['ngGrid', 'nvd3ChartDirectives']);
+angular.module('ui.widgets', ['datatorrent.mlhrTable', 'nvd3ChartDirectives']);
 angular.module('ui.websocket', ['ui.visibility', 'ui.notify']);
 angular.module('ui.models', ['ui.visibility', 'ui.websocket']);

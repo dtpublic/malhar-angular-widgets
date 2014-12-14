@@ -26,22 +26,20 @@ angular.module('ui.widgets')
         data: '='
       },
       controller: function ($scope) {
-        $scope.gridOptions = {
-          data: 'items',
-          enableRowSelection: false,
-          enableColumnResize: false,
-          columnDefs: [
-            { field: 'name', displayName: 'Name' },
-            { field: 'value', displayName: 'Value' }
+        $scope.tableOptions = {
+          initialSorts: [
+            { id: 'value', dir: '-' }
           ]
         };
+        $scope.columns = [
+          { id: 'name', key: 'name', label: 'Name' },
+          { id: 'value', key: 'value', label: 'Value', sort: 'number' }
+        ];
       },
       link: function postLink(scope) {
         scope.$watch('data', function (data) {
           if (data) {
-            scope.items = _.sortBy(data, function (item) {
-              return (-item.value);
-            });
+            scope.items = data;
           }
         });
       }

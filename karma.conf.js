@@ -12,10 +12,15 @@ module.exports = function(config) {
     // list of files / patterns to load in the browser
     files: [
       'bower_components/jquery/jquery.js',
+      'bower_components/jquery-ui/jquery-ui.js',
       'bower_components/lodash/dist/lodash.js',
+      'bower_components/hamsterjs/hamster.js',
       'bower_components/angular/angular.js',
       'bower_components/angular-mocks/angular-mocks.js',
-      'bower_components/ng-grid/ng-grid-2.0.11.min.js',
+      'bower_components/malhar-angular-table/dist/mlhr-table.js',
+      'bower_components/angular-ui-sortable/sortable.js',
+      'bower_components/angular-sanitize/angular-sanitize.js',
+      'bower_components/angular-mousewheel/mousewheel.js',
       'bower_components/angularjs-nvd3-directives/dist/angularjs-nvd3-directives.min.js',
       'bower_components/pines-notify/pnotify.core.js',
       'bower_components/angular-pines-notify/src/pnotify.js',
