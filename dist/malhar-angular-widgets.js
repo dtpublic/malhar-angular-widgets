@@ -652,16 +652,18 @@ angular.module('ui.websocket')
               return callback;
             }
           },
-
+          // Unsubscribe callback is optional.  If callback is omitted, all callbacks are removed.
           unsubscribe: function (topic, callback) {
             if (topicMap.hasOwnProperty(topic)) {
               var callbacks = topicMap[topic];
-              callbacks.remove(callback);
+              if (callback) {
+                callbacks.remove(callback);
+              }
 
-              // callbacks.has() will return false
-              // if there are no more handlers
+              // If no callback is provided proceed to delete all existing callbacks
+              // Or check callbacks.has() which will return false if there are no more handlers
               // registered in this callbacks collection.
-              if (!callbacks.has()) {
+              if (!callback || !callbacks.has()) {
                 
                 // Send the unsubscribe message first
                 var message = { type: 'unsubscribe', topic: topic };
