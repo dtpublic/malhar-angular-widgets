@@ -284,7 +284,7 @@ describe('Service: webSocket', function () {
       expect(webSocket.send).toHaveBeenCalledWith({ type: 'subscribe', topic: 'testing' });
     });
 
-    it('should unsubscribe', function () {
+    it('should unsubscribe single callback', function () {
       expect(webSocketObject.onmessage).toBeDefined();
 
       var listener1 = jasmine.createSpy();
@@ -307,6 +307,31 @@ describe('Service: webSocket', function () {
       expect(listener1.callCount).toEqual(1);
       expect(listener2.callCount).toEqual(2);
     });
+
+    it('should unsubscribe all listeners when second argument is omitted', function () {
+      expect(webSocketObject.onmessage).toBeDefined();
+
+      var listener1 = jasmine.createSpy();
+      var listener2 = jasmine.createSpy();
+
+      webSocket.subscribe('test', listener1);
+      webSocket.subscribe('test', listener2);
+
+      var message = { topic: 'test', data: {} };
+      var event = { data: JSON.stringify(message) };
+      webSocketObject.onmessage(event);
+
+      expect(listener1).toHaveBeenCalled();
+      expect(listener2).toHaveBeenCalled();
+
+      webSocket.unsubscribe('test');
+
+      webSocketObject.onmessage(event);
+
+      expect(listener1.callCount).toEqual(1);
+      expect(listener2.callCount).toEqual(1);
+    });
+
 
     it('should call unsubscribe on scope destroy', function () {
       var listener = jasmine.createSpy();
