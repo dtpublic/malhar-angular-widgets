@@ -39,12 +39,13 @@
         },
         getPrefix:function(){
             if(!this.cachedPrefix){
+                var b;
                 for(var l=0;b=this.prefixes[l++];){
                     if(b + this.props[2] in this.q){
                         this.cachedPrefix =  b;
                         return this.cachedPrefix;
                     }
-                }    
+                }
              }
         },
 
@@ -77,7 +78,7 @@
             return ((this.cachedPrefix + this.props[2]) in this.q);
         },
         _getProp:function(index){
-            return this.q[this.cachedPrefix + this.props[index]]; 
+            return this.q[this.cachedPrefix + this.props[index]];
         },
         _execute: function (index) {
             if (index) {
